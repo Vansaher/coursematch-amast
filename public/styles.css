@@ -108,7 +108,7 @@ h1 {
 }
 
 .admin-grid {
-  grid-template-columns: 0.85fr 0.85fr 0.7fr 1.2fr;
+  grid-template-columns: 0.9fr 0.7fr 1.2fr;
   align-items: start;
 }
 

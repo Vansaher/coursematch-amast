@@ -7,8 +7,7 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "import:um": "node src/scripts/importUniversityCourses.js um",
-    "import:upm": "node src/scripts/importUniversityCourses.js upm",
-    "test": "node --test"
+    "import:upm": "node src/scripts/importUniversityCourses.js upm"
   },
   "keywords": [],
   "author": "",

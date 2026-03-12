@@ -53,38 +53,6 @@
 
         <section class="panel">
           <div class="panel-heading">
-            <h2>Discover Sources</h2>
-            <p>Use SerAPI to find official programme and admission sources for imported courses.</p>
-          </div>
-          <form id="discovery-form" class="stack-form">
-            <label>
-              Scraper
-              <select name="scraperKey">
-                <option value="">Any imported source</option>
-                <option value="upm">UPM</option>
-                <option value="um">UM</option>
-              </select>
-            </label>
-            <label>
-              University ID
-              <input type="number" name="universityId" placeholder="Optional" />
-            </label>
-            <label>
-              Course ID
-              <input type="number" name="courseId" placeholder="Optional" />
-            </label>
-            <label>
-              Limit
-              <input type="number" name="limit" min="1" placeholder="Optional" />
-            </label>
-            <button type="submit" class="primary-button">Run discovery</button>
-            <span id="discovery-status" class="status-text"></span>
-          </form>
-          <pre id="discovery-output" class="code-output">No discovery run yet.</pre>
-        </section>
-
-        <section class="panel">
-          <div class="panel-heading">
             <h2>Universities</h2>
             <p>Loaded from the API. Click one to filter courses.</p>
           </div>
@@ -94,7 +62,7 @@
         <section class="panel admin-courses-panel">
           <div class="panel-heading">
             <h2>Courses</h2>
-            <p>Filter by university and faculty keyword, then inspect discovered source candidates.</p>
+            <p>Filter by university and faculty keyword.</p>
           </div>
           <form id="course-filter-form" class="filter-bar">
             <input type="text" name="faculty" placeholder="Faculty filter" />

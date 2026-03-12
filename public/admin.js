@@ -1,9 +1,6 @@
 const importForm = document.getElementById('import-form');
 const importStatus = document.getElementById('import-status');
 const importOutput = document.getElementById('import-output');
-const discoveryForm = document.getElementById('discovery-form');
-const discoveryStatus = document.getElementById('discovery-status');
-const discoveryOutput = document.getElementById('discovery-output');
 const universityList = document.getElementById('university-list');
 const courseList = document.getElementById('course-list');
 const courseFilterForm = document.getElementById('course-filter-form');
@@ -37,28 +34,7 @@ function renderCourses(courses) {
         <span>${course.durationText || 'Duration unknown'}</span>
       </div>
       <p>${course.description || 'No description available yet.'}</p>
-      <div class="result-meta">
-        <span>Discovered candidates: ${
-          course.metadata?.discovery?.serapi?.candidates?.length || 0
-        }</span>
-        <span>${
-          course.metadata?.discovery?.serapi?.primaryCandidate?.sourceDomain || 'No primary source'
-        }</span>
-      </div>
-      ${
-        course.metadata?.discovery?.serapi?.primaryCandidate
-          ? `<p><a class="ghost-link" href="${course.metadata.discovery.serapi.primaryCandidate.url}" target="_blank" rel="noreferrer">Primary source</a></p>`
-          : ''
-      }
-      <div class="result-meta">
-        <button type="button" class="secondary-button run-course-discovery" data-course-id="${course.id}">
-          Discover sources for this course
-        </button>
-      </div>
     `;
-    card
-      .querySelector('.run-course-discovery')
-      .addEventListener('click', async () => runSingleCourseDiscovery(course.id));
     courseList.appendChild(card);
   });
 }
@@ -131,58 +107,11 @@ importForm.addEventListener('submit', async (event) => {
   }
 });
 
-discoveryForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  discoveryStatus.textContent = 'Running discovery...';
-
-  const formData = new FormData(discoveryForm);
-  const scraperKey = formData.get('scraperKey');
-  const universityId = formData.get('universityId');
-  const courseId = formData.get('courseId');
-  const limit = formData.get('limit');
-
-  try {
-    const payload = await fetchJson('/api/admin/discovery/run', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        scraperKey: scraperKey || undefined,
-        universityId: universityId ? Number(universityId) : undefined,
-        courseId: courseId ? Number(courseId) : undefined,
-        limit: limit ? Number(limit) : undefined,
-      }),
-    });
-    discoveryOutput.textContent = JSON.stringify(payload, null, 2);
-    discoveryStatus.textContent = 'Discovery finished';
-    await loadCourses();
-  } catch (error) {
-    discoveryStatus.textContent = error.message;
-  }
-});
-
-async function runSingleCourseDiscovery(courseId) {
-  discoveryStatus.textContent = `Running discovery for course ${courseId}...`;
-  try {
-    const payload = await fetchJson(`/api/admin/discovery/course/${courseId}`, {
-      method: 'POST',
-    });
-    discoveryOutput.textContent = JSON.stringify(payload, null, 2);
-    discoveryStatus.textContent = 'Single-course discovery finished';
-    await loadCourses();
-  } catch (error) {
-    discoveryStatus.textContent = error.message;
-  }
-}
-
 courseFilterForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   await loadCourses();
 });
 
-Promise.all([loadUniversities(), loadCourses(), fetchJson('/api/admin/discovery/status')])
-  .then(([, , status]) => {
-    discoveryOutput.textContent = JSON.stringify(status, null, 2);
-  })
-  .catch((error) => {
-    importStatus.textContent = error.message;
-  });
+Promise.all([loadUniversities(), loadCourses()]).catch((error) => {
+  importStatus.textContent = error.message;
+});
