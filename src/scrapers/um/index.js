@@ -56,7 +56,11 @@ async function fetchHtml(url, fetchImpl = fetch) {
   return response.text();
 }
 
-async function discoverProgrammeUrls(fetchImpl = fetch) {
+async function discoverProgrammeUrls(options = {}) {
+  if (options.sourceUrl) {
+    return [options.sourceUrl];
+  }
+  const fetchImpl = options.fetchImpl || fetch;
   const html = await fetchHtml(PROGRAMMES_URL, fetchImpl);
   const links = extractLinks(html, ({ href, text }) => {
     const url = absoluteUrl(href);
@@ -105,7 +109,8 @@ function extractModules(programmeStructureHtml) {
   }));
 }
 
-async function scrapeProgramme(url, fetchImpl = fetch) {
+async function scrapeProgramme(url, options = {}) {
+  const fetchImpl = options.fetchImpl || fetch;
   const html = await fetchHtml(url, fetchImpl);
   const title =
     matchFirst(html, /<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i) ||

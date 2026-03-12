@@ -1,11 +1,15 @@
 const { sequelize, University, Course, CourseModule } = require('../models');
 const umScraper = require('../scrapers/um');
 const upmScraper = require('../scrapers/upm');
+const ukmScraper = require('../scrapers/ukm');
 const { buildUpmCourseDetail } = require('./upmCourseDetails');
+const fs = require('fs/promises');
+const path = require('path');
 
 const scrapers = {
   um: umScraper,
   upm: upmScraper,
+  ukm: ukmScraper,
 };
 
 async function upsertUniversity(universityPayload, transaction) {
@@ -45,8 +49,8 @@ async function replaceCourseModules(courseId, modules, transaction) {
   );
 }
 
-async function importSingleCourse(scraper, url) {
-  const scraped = await scraper.scrapeProgramme(url);
+async function importSingleCourse(scraper, url, options = {}) {
+  const scraped = await scraper.scrapeProgramme(url, options);
 
   return sequelize.transaction(async (transaction) => {
     if (scraped.multiCourse) {
@@ -137,7 +141,31 @@ async function importUniversityCourses(scraperKey, options = {}) {
   const syncOptions = process.env.DB_SYNC_ALTER === 'true' ? { alter: true } : {};
   await sequelize.sync(syncOptions);
 
-  const discoveredUrls = await scraper.discoverProgrammeUrls();
+  let discoveredUrls;
+  if (options.sourceUrl) {
+    discoveredUrls = [options.sourceUrl];
+  } else if (options.sourceFile) {
+    const extension = path.extname(options.sourceFile.originalName || '').toLowerCase();
+    if (extension === '.csv') {
+      const csvContent = await fs.readFile(options.sourceFile.path, 'utf8');
+      discoveredUrls = [...new Set(
+        csvContent
+          .split(/\r?\n/)
+          .flatMap((line) => line.split(','))
+          .map((value) => value.trim())
+          .filter((value) => /^https?:\/\//i.test(value))
+      )];
+      if (!discoveredUrls.length) {
+        throw new Error('CSV upload did not contain any valid http/https URLs');
+      }
+    } else if (extension === '.pdf') {
+      throw new Error('PDF import source is not implemented yet. Use a URL or CSV of URLs.');
+    } else {
+      throw new Error('Unsupported upload type. Use a CSV of URLs or a direct URL.');
+    }
+  } else {
+    discoveredUrls = await scraper.discoverProgrammeUrls(options);
+  }
   const limit = Number(options.limit || process.env.SCRAPER_LIMIT || discoveredUrls.length);
   const urls = discoveredUrls.slice(0, limit);
 
@@ -146,11 +174,12 @@ async function importUniversityCourses(scraperKey, options = {}) {
     discovered: discoveredUrls.length,
     imported: 0,
     failed: [],
+    sourceOverride: options.sourceUrl || (options.sourceFile ? options.sourceFile.originalName : null),
   };
 
   for (const url of urls) {
     try {
-      const importResult = await importSingleCourse(scraper, url);
+      const importResult = await importSingleCourse(scraper, url, options);
       result.imported += importResult.importedCount || 1;
     } catch (error) {
       result.failed.push({ url, error: error.message });

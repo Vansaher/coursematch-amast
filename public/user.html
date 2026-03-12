@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Course Matching User Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="page-shell user-shell dashboard-style-shell">
+    <div class="backdrop"></div>
+    <div class="admin-dashboard user-dashboard-shell">
+      <aside class="admin-sidebar">
+        <div class="admin-brand">
+          <div class="admin-brand-mark">A</div>
+          <div class="admin-brand-copy">
+            <strong>AMAST</strong>
+            <span>Course Matching</span>
+          </div>
+        </div>
+
+        <nav class="admin-nav">
+          <a class="admin-nav-item" href="/">Landing page</a>
+          <a class="admin-nav-item active" href="/user">User portal</a>
+          <a class="admin-nav-item" href="/catalog">Catalog</a>
+          <a class="admin-nav-item" href="/admin/login">Admin login</a>
+        </nav>
+      </aside>
+
+      <main class="admin-main">
+        <header class="admin-topbar">
+          <div class="admin-toolbar-spacer"></div>
+          <div class="admin-toolbar-user">
+            <div class="admin-avatar">U</div>
+            <div class="admin-user-copy">
+              <strong>User</strong>
+              <span>Open portal</span>
+            </div>
+          </div>
+        </header>
+
+        <section class="hero-card user-hero-banner">
+          <p class="eyebrow">Student Portal</p>
+          <h1>Match your scores to Malaysian university courses.</h1>
+          <p class="lede">
+            Enter your scores manually for now. The system will rank possible course fits
+            using the imported university catalogue and any structured requirement data
+            available in the database.
+          </p>
+          <div class="hero-links">
+            <a class="secondary-button" href="/catalog">Browse course catalog</a>
+          </div>
+        </section>
+
+        <section class="panel-grid user-dashboard-grid">
+          <form id="match-form" class="panel form-panel">
+            <div class="panel-heading">
+              <h2>Manual Input</h2>
+              <p>Scores can be edited freely. Add as many subjects as you need.</p>
+            </div>
+
+            <div class="form-row">
+              <label>
+                Preferred university ID
+                <input type="number" name="preferredUniversityId" placeholder="Optional" />
+              </label>
+              <label>
+                Preferred faculty
+                <input type="text" name="preferredFaculty" placeholder="e.g. Komputer" />
+              </label>
+            </div>
+
+            <div class="subject-block">
+              <div class="subject-header">
+                <h3>Subjects</h3>
+                <button type="button" id="add-subject" class="secondary-button">
+                  Add subject
+                </button>
+              </div>
+              <div id="subjects"></div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="primary-button">Find matches</button>
+              <span id="form-status" class="status-text"></span>
+            </div>
+          </form>
+
+          <section class="panel summary-panel">
+            <div class="panel-heading">
+              <h2>Result Summary</h2>
+              <p>Top ranked courses appear below after you submit your scores.</p>
+            </div>
+            <div id="summary" class="summary-placeholder">
+              No manual match has been run yet.
+            </div>
+            <div id="results" class="result-list"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <template id="subject-template">
+      <div class="subject-row">
+        <input type="text" name="subject" placeholder="Subject name" />
+        <input type="number" name="score" min="0" max="100" step="0.01" placeholder="Score" />
+        <button type="button" class="danger-button remove-subject">Remove</button>
+      </div>
+    </template>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

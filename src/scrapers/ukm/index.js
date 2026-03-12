@@ -1,11 +1,7 @@
 const { htmlToTextLines, normalizeWhitespace } = require('../utils/html');
 
-const BASE_URL = 'https://www.upm.edu.my';
-const FALLBACK_SOURCE_URL = `${BASE_URL}/admission/programmes/undergraduate-75800`;
-const PROGRAMME_SOURCE_URLS = [
-  'https://web.upm.edu.my/kemasukan/program/prasiswazah-75800',
-  FALLBACK_SOURCE_URL,
-];
+const BASE_URL = 'https://www.ukm.my';
+const PROGRAMMES_URL = `${BASE_URL}/portalukm/undergraduate/`;
 
 function slugify(value) {
   return String(value || '')
@@ -18,15 +14,11 @@ function inferAwardLevel(name) {
   const lower = String(name || '').toLowerCase();
 
   if (lower.includes('foundation')) return 'foundation';
-  if (lower.includes('asasi')) return 'foundation';
   if (lower.includes('certificate')) return 'certificate';
   if (lower.includes('diploma')) return 'diploma';
   if (lower.includes('bachelor')) return 'bachelor';
-  if (lower.includes('bacelor')) return 'bachelor';
   if (lower.includes('doctor')) return 'doctorate';
-  if (lower.includes('doktor')) return 'doctorate';
   if (lower.includes('master')) return 'master';
-  if (lower.includes('sarjana')) return 'master';
   return 'other';
 }
 
@@ -34,26 +26,16 @@ function isFacultyLine(line) {
   return (
     /^faculty of /i.test(line) ||
     /^school of /i.test(line) ||
-    /^fakulti /i.test(line) ||
-    /^pusat /i.test(line)
+    /^citra university study center$/i.test(line)
   );
 }
 
 function isProgrammeLine(line) {
-  return /^(bachelor|bacelor|doctor|doktor|foundation|asasi|diploma)\b/i.test(line);
+  return /^(bachelor|degree|doctor)\b/i.test(line);
 }
 
 function sanitizeProgrammeName(line) {
-  return normalizeWhitespace(
-    line
-      .replace(/^[*-]\s*/, '')
-      .replace(/\s+#$/, '')
-      .replace(/\s+/g, ' ')
-  );
-}
-
-function buildProgrammeDescription(name, faculty) {
-  return `${name} offered by ${faculty} at Universiti Putra Malaysia.`;
+  return normalizeWhitespace(line.replace(/\s+#$/, '').replace(/\s+/g, ' '));
 }
 
 async function fetchHtml(url, fetchImpl = fetch) {
@@ -70,27 +52,17 @@ async function fetchHtml(url, fetchImpl = fetch) {
   return response.text();
 }
 
-async function fetchProgrammePage(fetchImpl = fetch) {
-  const errors = [];
-
-  for (const url of PROGRAMME_SOURCE_URLS) {
-    try {
-      const html = await fetchHtml(url, fetchImpl);
-      return { url, html };
-    } catch (error) {
-      errors.push(`${url}: ${error.message}`);
-    }
-  }
-
-  throw new Error(`Failed to fetch all UPM programme sources. ${errors.join(' | ')}`);
-}
-
 function extractProgrammesFromHtml(html) {
   const lines = htmlToTextLines(html);
+  const startIndex = lines.findIndex((line) => /^Malaysian Students$/i.test(line));
+  const endIndex = lines.findIndex((line) => /^International Students$/i.test(line));
+  const scopedLines =
+    startIndex >= 0 ? lines.slice(startIndex + 1, endIndex > startIndex ? endIndex : undefined) : lines;
+
   const programmes = [];
   let currentFaculty = null;
 
-  for (const line of lines) {
+  for (const line of scopedLines) {
     if (isFacultyLine(line)) {
       currentFaculty = line;
       continue;
@@ -107,15 +79,15 @@ function extractProgrammesFromHtml(html) {
 
     programmes.push({
       university: {
-        slug: 'universiti-putra-malaysia',
-        name: 'Universiti Putra Malaysia',
+        slug: 'universiti-kebangsaan-malaysia',
+        name: 'Universiti Kebangsaan Malaysia',
         country: 'Malaysia',
         state: 'Selangor',
-        city: 'Serdang',
+        city: 'Bangi',
         websiteUrl: BASE_URL,
         sourceType: 'official',
         metadata: {
-          sourceDomain: 'upm.edu.my',
+          sourceDomain: 'ukm.my',
         },
       },
       course: {
@@ -128,13 +100,13 @@ function extractProgrammesFromHtml(html) {
         durationText: null,
         intakeText: null,
         tuitionText: null,
-        description: buildProgrammeDescription(name, currentFaculty),
+        description: `${name} offered by ${currentFaculty} at Universiti Kebangsaan Malaysia.`,
         entryRequirements: null,
         careerProspects: null,
-        sourceUrl: FALLBACK_SOURCE_URL,
+        sourceUrl: PROGRAMMES_URL,
         requirements: null,
         metadata: {
-          scraper: 'upm',
+          scraper: 'ukm',
           sourcePage: 'undergraduate-programmes',
         },
       },
@@ -143,7 +115,7 @@ function extractProgrammesFromHtml(html) {
   }
 
   if (!programmes.length) {
-    throw new Error('Unable to extract programmes from UPM undergraduate page');
+    throw new Error('Unable to extract programmes from UKM undergraduate page');
   }
 
   return programmes;
@@ -153,15 +125,13 @@ async function discoverProgrammeUrls(options = {}) {
   if (options.sourceUrl) {
     return [options.sourceUrl];
   }
-  return [PROGRAMME_SOURCE_URLS[0]];
+  return [PROGRAMMES_URL];
 }
 
 async function scrapeProgramme(url, options = {}) {
   const fetchImpl = options.fetchImpl || fetch;
-  const page = options.sourceUrl
-    ? { url: options.sourceUrl, html: await fetchHtml(options.sourceUrl, fetchImpl) }
-    : await fetchProgrammePage(fetchImpl);
-  const html = page.html;
+  const pageUrl = options.sourceUrl || url;
+  const html = await fetchHtml(pageUrl, fetchImpl);
   const programmes = extractProgrammesFromHtml(html);
 
   return {
@@ -169,15 +139,15 @@ async function scrapeProgramme(url, options = {}) {
     university: programmes[0] ? programmes[0].university : null,
     courses: programmes.map((programme) => ({
       ...programme.course,
-      sourceUrl: `${page.url}#${programme.course.slug}`,
+      sourceUrl: `${pageUrl}#${programme.course.slug}`,
     })),
     modulesByCourseSlug: {},
   };
 }
 
 module.exports = {
-  key: 'upm',
-  label: 'Universiti Putra Malaysia',
+  key: 'ukm',
+  label: 'Universiti Kebangsaan Malaysia',
   discoverProgrammeUrls,
   scrapeProgramme,
 };

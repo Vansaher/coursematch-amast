@@ -14,65 +14,119 @@
   </head>
   <body class="page-shell admin-shell">
     <div class="backdrop"></div>
-    <main class="layout">
-      <section class="hero-card admin-hero">
-        <p class="eyebrow">Admin Console</p>
-        <h1>Refresh the catalogue and inspect imported university data.</h1>
-        <p class="lede">
-          Trigger scraper imports directly from the app, then review universities and
-          filtered course lists without dropping into the terminal.
-        </p>
-        <div class="hero-links">
-          <a class="ghost-link" href="/">Open student portal</a>
+    <div class="admin-dashboard">
+      <aside class="admin-sidebar">
+        <div class="admin-brand">
+          <div class="admin-brand-mark">A</div>
+          <div class="admin-brand-copy">
+            <strong>AMAST</strong>
+            <span>Course Matching</span>
+          </div>
         </div>
-      </section>
 
-      <section class="panel-grid admin-grid">
-        <section class="panel">
-          <div class="panel-heading">
-            <h2>Run Import</h2>
-            <p>Execute an available scraper and persist the results to MySQL.</p>
+        <nav class="admin-nav">
+          <a class="admin-nav-item active" href="/admin">Dashboard</a>
+          <a class="admin-nav-item" href="/admin/imports">Imports</a>
+          <a class="admin-nav-item" href="/catalog">Catalog</a>
+          <a class="admin-nav-item" href="/">Landing page</a>
+          <a class="admin-nav-item" href="/user">User portal</a>
+        </nav>
+
+        <div class="admin-sidebar-footer">
+          <button id="logout-button" class="secondary-button sidebar-button" type="button">
+            Log out
+          </button>
+        </div>
+      </aside>
+
+      <main class="admin-main">
+        <header class="admin-topbar">
+          <div class="admin-toolbar-spacer"></div>
+          <div class="admin-toolbar-user">
+            <div class="admin-toolbar-dot"></div>
+            <div class="admin-avatar">A</div>
+            <div class="admin-user-copy">
+              <strong>Admin</strong>
+              <span>Authenticated</span>
+            </div>
           </div>
-          <form id="import-form" class="stack-form">
-            <label>
-              Scraper
-              <select name="scraperKey">
-                <option value="upm">UPM</option>
-                <option value="um">UM</option>
-              </select>
-            </label>
-            <label>
-              Limit
-              <input type="number" name="limit" min="1" placeholder="Optional" />
-            </label>
-            <button type="submit" class="primary-button">Run import</button>
-            <span id="import-status" class="status-text"></span>
-          </form>
-          <pre id="import-output" class="code-output">No import run yet.</pre>
+        </header>
+
+        <section class="admin-hero-banner">
+          <h1>Dashboard</h1>
+          <p>Complete overview of your course catalogue and import activity.</p>
         </section>
 
-        <section class="panel">
-          <div class="panel-heading">
-            <h2>Universities</h2>
-            <p>Loaded from the API. Click one to filter courses.</p>
-          </div>
-          <div id="university-list" class="chip-list"></div>
+        <section class="admin-kpi-grid">
+          <article class="admin-kpi-card kpi-blue">
+            <div class="admin-kpi-icon">U</div>
+            <span class="admin-kpi-label">Universities</span>
+            <strong id="stat-universities">0</strong>
+            <p>Total imported institutions</p>
+          </article>
+          <article class="admin-kpi-card kpi-green">
+            <div class="admin-kpi-icon">C</div>
+            <span class="admin-kpi-label">Courses</span>
+            <strong id="stat-courses">0</strong>
+            <p>Total courses in catalogue</p>
+          </article>
+          <article class="admin-kpi-card kpi-violet">
+            <div class="admin-kpi-icon">F</div>
+            <span class="admin-kpi-label">Filtered</span>
+            <strong id="stat-filtered">0</strong>
+            <p>Courses in the current result set</p>
+          </article>
+          <article class="admin-kpi-card kpi-orange">
+            <div class="admin-kpi-icon">M</div>
+            <span class="admin-kpi-label">Matching</span>
+            <strong id="stat-matching">Ready</strong>
+            <p>User matching portal is available</p>
+          </article>
         </section>
 
-        <section class="panel admin-courses-panel">
-          <div class="panel-heading">
-            <h2>Courses</h2>
-            <p>Filter by university and faculty keyword.</p>
-          </div>
-          <form id="course-filter-form" class="filter-bar">
-            <input type="text" name="faculty" placeholder="Faculty filter" />
-            <button type="submit" class="secondary-button">Apply</button>
-          </form>
-          <div id="course-list" class="result-list compact-list"></div>
+        <section class="admin-content-grid">
+          <section class="panel admin-dashboard-panel">
+            <div class="admin-panel-header admin-header-violet">
+              <span></span>
+              <h2>Universities</h2>
+            </div>
+            <p class="admin-panel-copy">
+              Select a university to narrow the course catalogue below.
+            </p>
+            <div id="university-list" class="chip-list admin-chip-list"></div>
+          </section>
+
+          <section class="panel admin-dashboard-panel">
+            <div class="admin-panel-header admin-header-blue">
+              <span></span>
+              <h2>Import Centre</h2>
+            </div>
+            <p class="admin-panel-copy">
+              Run scraper imports from a dedicated screen with optional URL, CSV, or PDF input.
+            </p>
+            <div class="admin-dashboard-cta">
+              <a class="primary-button landing-button" href="/admin/imports">Open imports page</a>
+            </div>
+          </section>
+
+          <section class="panel admin-dashboard-panel admin-wide-panel">
+            <div class="admin-panel-header admin-header-blue">
+              <span></span>
+              <h2>Course Catalogue</h2>
+            </div>
+            <p class="admin-panel-copy">
+              Filter by faculty name and inspect the current imported catalogue.
+            </p>
+            <form id="course-filter-form" class="filter-bar">
+              <input type="text" name="faculty" placeholder="Faculty filter" />
+              <button type="submit" class="secondary-button">Apply</button>
+            </form>
+            <div id="course-list" class="result-list compact-list admin-course-list"></div>
+          </section>
         </section>
-      </section>
-    </main>
+      </main>
+    </div>
 
     <script src="/admin.js"></script>
   </body>
-  </html>
+</html>

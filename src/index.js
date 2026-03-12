@@ -6,6 +6,7 @@ const courseRoutes = require('./routes/courseRoutes');
 const matchRoutes = require('./routes/matchRoutes');
 const universityRoutes = require('./routes/universityRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const { getSessionFromRequest } = require('./utils/adminAuth');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -26,8 +27,36 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
+app.get('/user', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'user.html'));
+});
+
+app.get('/catalog', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'catalog.html'));
+});
+
 app.get('/admin', (req, res) => {
+  const session = getSessionFromRequest(req);
+  if (!session) {
+    return res.redirect('/admin/login');
+  }
   res.sendFile(path.join(__dirname, '..', 'public', 'admin.html'));
+});
+
+app.get('/admin/imports', (req, res) => {
+  const session = getSessionFromRequest(req);
+  if (!session) {
+    return res.redirect('/admin/login');
+  }
+  res.sendFile(path.join(__dirname, '..', 'public', 'admin-imports.html'));
+});
+
+app.get('/admin/login', (req, res) => {
+  const session = getSessionFromRequest(req);
+  if (session) {
+    return res.redirect('/admin');
+  }
+  res.sendFile(path.join(__dirname, '..', 'public', 'admin-login.html'));
 });
 
 // connect to database using Sequelize

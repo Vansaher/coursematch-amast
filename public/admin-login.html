@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="page-shell login-shell">
+    <div class="backdrop"></div>
+    <main class="layout narrow-layout">
+      <section class="hero-card login-card">
+        <p class="eyebrow">Admin Access</p>
+        <h1>Sign in to the admin console.</h1>
+        <p class="lede">
+          Administrators can run catalogue imports and manage the university dataset.
+          The student-facing matching page remains open without a login.
+        </p>
+        <form id="admin-login-form" class="stack-form login-form">
+          <label>
+            Username
+            <input type="text" name="username" autocomplete="username" required />
+          </label>
+          <label>
+            Password
+            <input type="password" name="password" autocomplete="current-password" required />
+          </label>
+          <button type="submit" class="primary-button">Log in</button>
+          <span id="login-status" class="status-text"></span>
+        </form>
+        <div class="hero-links">
+          <a class="ghost-link" href="/">Back to landing page</a>
+          <a class="ghost-link" href="/user">Continue as user</a>
+        </div>
+      </section>
+    </main>
+    <script src="/admin-login.js"></script>
+  </body>
+  </html>

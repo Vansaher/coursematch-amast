@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Course Matching</title>
+    <title>Course Matching Platform</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -12,77 +12,48 @@
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body class="page-shell">
+  <body class="page-shell landing-shell dashboard-style-shell">
     <div class="backdrop"></div>
-    <main class="layout">
-      <section class="hero-card">
-        <p class="eyebrow">Student Portal</p>
-        <h1>Match your scores to Malaysian university courses.</h1>
-        <p class="lede">
-          Enter your scores manually for now. The system will rank possible course fits
-          using the imported university catalogue and any structured requirement data
-          available in the database.
-        </p>
-        <div class="hero-links">
-          <a class="ghost-link" href="/admin">Open admin console</a>
+    <main class="layout landing-layout">
+      <section class="landing-nav dashboard-nav">
+        <div class="brand-mark">AMAST Match</div>
+        <div class="landing-actions">
+          <a class="ghost-link" href="/catalog">Course Catalog</a>
+          <a class="ghost-link" href="/user">User Page</a>
+          <a class="primary-button nav-button" href="/admin/login">Admin Log In</a>
         </div>
       </section>
 
-      <section class="panel-grid">
-        <form id="match-form" class="panel form-panel">
-          <div class="panel-heading">
-            <h2>Manual Input</h2>
-            <p>Scores can be edited freely. Add as many subjects as you need.</p>
-          </div>
-
-          <div class="form-row">
-            <label>
-              Preferred university ID
-              <input type="number" name="preferredUniversityId" placeholder="Optional" />
-            </label>
-            <label>
-              Preferred faculty
-              <input type="text" name="preferredFaculty" placeholder="e.g. Komputer" />
-            </label>
-          </div>
-
-          <div class="subject-block">
-            <div class="subject-header">
-              <h3>Subjects</h3>
-              <button type="button" id="add-subject" class="secondary-button">
-                Add subject
-              </button>
+      <section class="landing-stage dashboard-stage">
+        <article class="landing-visual dashboard-landing-visual">
+          <div class="landing-copy">
+            <p class="eyebrow">First Entry</p>
+            <h1>Step into your next university path.</h1>
+            <div class="landing-buttons">
+              <a class="secondary-button landing-button" href="/catalog">Browse catalog</a>
+              <a class="primary-button landing-button" href="/user">Enter as user</a>
+              <a class="secondary-button landing-button" href="/admin/login">Enter as admin</a>
             </div>
-            <div id="subjects"></div>
           </div>
-
-          <div class="form-actions">
-            <button type="submit" class="primary-button">Find matches</button>
-            <span id="form-status" class="status-text"></span>
+          <div class="landing-panel dashboard-side-cards">
+            <div class="landing-panel-card">
+              <span class="landing-stat-label">Students</span>
+              <strong>Manual score entry</strong>
+              <p>Open access for applicants exploring suitable courses.</p>
+            </div>
+            <div class="landing-panel-card">
+              <span class="landing-stat-label">Admins</span>
+              <strong>Protected console</strong>
+              <p>Authenticate before running imports or changing catalogue data.</p>
+            </div>
+            <div class="landing-panel-card accent-card">
+              <span class="landing-stat-label">Catalogues</span>
+              <strong>Malaysia-first dataset</strong>
+              <p>Designed for course matching, admissions context, and future AI enrichment.</p>
+            </div>
           </div>
-        </form>
-
-        <section class="panel summary-panel">
-          <div class="panel-heading">
-            <h2>Result Summary</h2>
-            <p>Top ranked courses appear below after you submit your scores.</p>
-          </div>
-          <div id="summary" class="summary-placeholder">
-            No manual match has been run yet.
-          </div>
-          <div id="results" class="result-list"></div>
-        </section>
+        </article>
       </section>
     </main>
-
-    <template id="subject-template">
-      <div class="subject-row">
-        <input type="text" name="subject" placeholder="Subject name" />
-        <input type="number" name="score" min="0" max="100" step="0.01" placeholder="Score" />
-        <button type="button" class="danger-button remove-subject">Remove</button>
-      </div>
-    </template>
-
-    <script src="/app.js"></script>
   </body>
-  </html>
+</html>

@@ -1,9 +1,11 @@
-const importForm = document.getElementById('import-form');
-const importStatus = document.getElementById('import-status');
-const importOutput = document.getElementById('import-output');
 const universityList = document.getElementById('university-list');
 const courseList = document.getElementById('course-list');
 const courseFilterForm = document.getElementById('course-filter-form');
+const logoutButton = document.getElementById('logout-button');
+const statUniversities = document.getElementById('stat-universities');
+const statCourses = document.getElementById('stat-courses');
+const statFiltered = document.getElementById('stat-filtered');
+const statMatching = document.getElementById('stat-matching');
 
 let activeUniversityId = '';
 
@@ -16,8 +18,19 @@ async function fetchJson(url, options = {}) {
   return payload;
 }
 
+logoutButton.addEventListener('click', async () => {
+  try {
+    await fetchJson('/api/admin/logout', {
+      method: 'POST',
+    });
+  } finally {
+    window.location.href = '/admin/login';
+  }
+});
+
 function renderCourses(courses) {
   courseList.innerHTML = '';
+  statFiltered.textContent = String(courses.length);
   if (!courses.length) {
     courseList.innerHTML = '<div class="summary-placeholder">No courses found for this filter.</div>';
     return;
@@ -49,11 +62,15 @@ async function loadCourses() {
     query.set('faculty', faculty);
   }
   const courses = await fetchJson(`/api/courses?${query.toString()}`);
+  if (!activeUniversityId && !faculty) {
+    statCourses.textContent = String(courses.length);
+  }
   renderCourses(courses);
 }
 
 async function loadUniversities() {
   const universities = await fetchJson('/api/universities');
+  statUniversities.textContent = String(universities.length);
   universityList.innerHTML = '';
 
   const allChip = document.createElement('button');
@@ -81,37 +98,14 @@ async function loadUniversities() {
   });
 }
 
-importForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  importStatus.textContent = 'Running import...';
-
-  const formData = new FormData(importForm);
-  const scraperKey = formData.get('scraperKey');
-  const limit = formData.get('limit');
-
-  try {
-    const payload = await fetchJson('/api/admin/imports', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        scraperKey,
-        limit: limit ? Number(limit) : undefined,
-      }),
-    });
-    importOutput.textContent = JSON.stringify(payload, null, 2);
-    importStatus.textContent = 'Import finished';
-    await loadUniversities();
-    await loadCourses();
-  } catch (error) {
-    importStatus.textContent = error.message;
-  }
-});
-
 courseFilterForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   await loadCourses();
 });
 
 Promise.all([loadUniversities(), loadCourses()]).catch((error) => {
-  importStatus.textContent = error.message;
+  if (statMatching) {
+    statMatching.textContent = 'Error';
+  }
+  console.error(error);
 });
