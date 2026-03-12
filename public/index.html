@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Course Matching</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="page-shell">
+    <div class="backdrop"></div>
+    <main class="layout">
+      <section class="hero-card">
+        <p class="eyebrow">Student Portal</p>
+        <h1>Match your scores to Malaysian university courses.</h1>
+        <p class="lede">
+          Enter your scores manually for now. The system will rank possible course fits
+          using the imported university catalogue and any structured requirement data
+          available in the database.
+        </p>
+        <div class="hero-links">
+          <a class="ghost-link" href="/admin">Open admin console</a>
+        </div>
+      </section>
+
+      <section class="panel-grid">
+        <form id="match-form" class="panel form-panel">
+          <div class="panel-heading">
+            <h2>Manual Input</h2>
+            <p>Scores can be edited freely. Add as many subjects as you need.</p>
+          </div>
+
+          <div class="form-row">
+            <label>
+              Preferred university ID
+              <input type="number" name="preferredUniversityId" placeholder="Optional" />
+            </label>
+            <label>
+              Preferred faculty
+              <input type="text" name="preferredFaculty" placeholder="e.g. Komputer" />
+            </label>
+          </div>
+
+          <div class="subject-block">
+            <div class="subject-header">
+              <h3>Subjects</h3>
+              <button type="button" id="add-subject" class="secondary-button">
+                Add subject
+              </button>
+            </div>
+            <div id="subjects"></div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="primary-button">Find matches</button>
+            <span id="form-status" class="status-text"></span>
+          </div>
+        </form>
+
+        <section class="panel summary-panel">
+          <div class="panel-heading">
+            <h2>Result Summary</h2>
+            <p>Top ranked courses appear below after you submit your scores.</p>
+          </div>
+          <div id="summary" class="summary-placeholder">
+            No manual match has been run yet.
+          </div>
+          <div id="results" class="result-list"></div>
+        </section>
+      </section>
+    </main>
+
+    <template id="subject-template">
+      <div class="subject-row">
+        <input type="text" name="subject" placeholder="Subject name" />
+        <input type="number" name="score" min="0" max="100" step="0.01" placeholder="Score" />
+        <button type="button" class="danger-button remove-subject">Remove</button>
+      </div>
+    </template>
+
+    <script src="/app.js"></script>
+  </body>
+  </html>
