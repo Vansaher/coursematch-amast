@@ -12,34 +12,54 @@
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body class="page-shell login-shell">
+  <body class="page-shell login-shell dashboard-style-shell">
     <div class="backdrop"></div>
-    <main class="layout narrow-layout">
-      <section class="hero-card login-card">
-        <p class="eyebrow">Admin Access</p>
-        <h1>Sign in to the admin console.</h1>
-        <p class="lede">
-          Administrators can run catalogue imports and manage the university dataset.
-          The student-facing matching page remains open without a login.
-        </p>
-        <form id="admin-login-form" class="stack-form login-form">
-          <label>
-            Username
-            <input type="text" name="username" autocomplete="username" required />
-          </label>
-          <label>
-            Password
-            <input type="password" name="password" autocomplete="current-password" required />
-          </label>
-          <button type="submit" class="primary-button">Log in</button>
-          <span id="login-status" class="status-text"></span>
-        </form>
-        <div class="hero-links">
-          <a class="ghost-link" href="/">Back to landing page</a>
-          <a class="ghost-link" href="/user">Continue as user</a>
-        </div>
-      </section>
-    </main>
+    <div class="admin-dashboard login-dashboard-shell">
+      <main class="admin-main login-main">
+        <header class="admin-topbar login-topbar">
+          <div class="admin-brand">
+            <div class="admin-brand-mark">A</div>
+            <div class="admin-brand-copy">
+              <strong>AMAST</strong>
+              <span>Course Matching</span>
+            </div>
+          </div>
+          <div class="hero-links login-top-links">
+            <a class="ghost-link" href="/">Back to home</a>
+            <a class="ghost-link" href="/user">Continue as user</a>
+          </div>
+        </header>
+
+        <section class="admin-hero-banner login-hero-banner">
+          <h1>Admin Login</h1>
+          <p>Sign in to run imports and manage the course catalogue.</p>
+        </section>
+
+        <section class="panel login-panel">
+          <div class="panel-heading">
+            <h2>Sign in to the admin console</h2>
+            <p>
+              Administrators can run catalogue imports and manage university data.
+              The student-facing matching pages remain open without a login.
+            </p>
+          </div>
+          <form id="admin-login-form" class="stack-form login-form">
+            <label>
+              Username
+              <input type="text" name="username" autocomplete="username" required />
+            </label>
+            <label>
+              Password
+              <input type="password" name="password" autocomplete="current-password" required />
+            </label>
+            <div class="form-actions login-actions">
+              <button type="submit" class="primary-button">Log in</button>
+              <span id="login-status" class="status-text"></span>
+            </div>
+          </form>
+        </section>
+      </main>
+    </div>
     <script src="/admin-login.js"></script>
   </body>
-  </html>
+</html>

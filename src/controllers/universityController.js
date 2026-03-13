@@ -1,5 +1,14 @@
 const { Op } = require('sequelize');
 const { University, Course } = require('../models');
+const { deriveUniversityAbbreviation } = require('../utils/universityAbbreviation');
+
+function serializeUniversity(university) {
+  const payload = university.toJSON();
+  return {
+    ...payload,
+    abbreviation: deriveUniversityAbbreviation(payload),
+  };
+}
 
 exports.createUniversity = async (req, res) => {
   try {
@@ -33,7 +42,7 @@ exports.getUniversities = async (req, res) => {
       order: [['name', 'ASC']],
     });
 
-    res.json(universities);
+    res.json(universities.map(serializeUniversity));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -49,7 +58,7 @@ exports.getUniversityById = async (req, res) => {
       return res.status(404).json({ error: 'Not found' });
     }
 
-    res.json(university);
+    res.json(serializeUniversity(university));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -70,7 +79,7 @@ exports.updateUniversity = async (req, res) => {
       include: [{ model: Course, as: 'courses' }],
     });
 
-    res.json(updated);
+    res.json(serializeUniversity(updated));
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

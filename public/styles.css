@@ -292,6 +292,41 @@ a.secondary-button {
   margin-top: 24px;
 }
 
+.login-dashboard-shell {
+  min-height: 100vh;
+}
+
+.login-main {
+  width: min(920px, calc(100vw - 48px));
+  margin: 0 auto;
+  padding: 24px 0 48px;
+}
+
+.login-topbar {
+  margin-bottom: 24px;
+}
+
+.login-top-links {
+  margin-top: 0;
+}
+
+.login-hero-banner h1 {
+  font-family: "Space Grotesk", sans-serif;
+  color: #167fd4;
+  max-width: none;
+}
+
+.login-panel {
+  max-width: 640px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid #dfe6ef;
+  box-shadow: 0 14px 28px rgba(69, 85, 112, 0.08);
+}
+
+.login-actions {
+  align-items: center;
+}
+
 .admin-grid {
   grid-template-columns: 0.9fr 0.7fr 1.2fr;
   align-items: start;
@@ -877,6 +912,45 @@ button:hover {
 .catalog-course-card {
   background: #fff;
   border-color: #e1e8f1;
+}
+
+.university-multi-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-height: 48px;
+}
+
+.university-option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.university-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.university-option span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 58px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(23, 127, 216, 0.08);
+  color: #177fd8;
+  border: 1px solid rgba(23, 127, 216, 0.1);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.university-option input:checked + span {
+  background: linear-gradient(90deg, #1197e5, #1a86d9);
+  color: white;
+  border-color: transparent;
 }
 
 .admin-chip-list {

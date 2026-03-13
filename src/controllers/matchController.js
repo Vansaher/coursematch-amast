@@ -1,4 +1,5 @@
 const { Student, Course, University, CourseModule } = require('../models');
+const { deriveUniversityAbbreviation } = require('../utils/universityAbbreviation');
 
 function numericScores(scores = {}) {
   return Object.entries(scores)
@@ -23,11 +24,12 @@ function courseMatchesStudent(course, scores = {}, requirements = {}) {
   const reqs = course.requirements || {};
   const average = calculateAverage(scores);
 
-  if (requirements.preferredUniversityId) {
-    if (String(course.universityId) !== String(requirements.preferredUniversityId)) {
+  if (Array.isArray(requirements.preferredUniversityIds) && requirements.preferredUniversityIds.length) {
+    const allowedIds = requirements.preferredUniversityIds.map((value) => String(value));
+    if (!allowedIds.includes(String(course.universityId))) {
       return null;
     }
-    reasons.push('Matches preferred university');
+    reasons.push('Matches preferred university selection');
   }
 
   if (requirements.preferredFaculty) {
@@ -60,7 +62,7 @@ function courseMatchesStudent(course, scores = {}, requirements = {}) {
   if (requirements.preferredFaculty) {
     matchScore += 10;
   }
-  if (requirements.preferredUniversityId) {
+  if (Array.isArray(requirements.preferredUniversityIds) && requirements.preferredUniversityIds.length) {
     matchScore += 10;
   }
   if (!Object.keys(reqs).length) {
@@ -89,13 +91,38 @@ async function findMatches(scores = {}, requirements = {}) {
     .sort((a, b) => b.matchScore - a.matchScore || a.name.localeCompare(b.name));
 }
 
+async function resolvePreferredUniversityIds(requirements = {}) {
+  if (Array.isArray(requirements.preferredUniversityIds) && requirements.preferredUniversityIds.length) {
+    return requirements;
+  }
+
+  const abbreviations = Array.isArray(requirements.preferredUniversities)
+    ? requirements.preferredUniversities.map((value) => String(value).toUpperCase())
+    : [];
+
+  if (!abbreviations.length) {
+    return requirements;
+  }
+
+  const universities = await University.findAll();
+  const preferredUniversityIds = universities
+    .filter((university) => abbreviations.includes(deriveUniversityAbbreviation(university)))
+    .map((university) => university.id);
+
+  return {
+    ...requirements,
+    preferredUniversityIds,
+  };
+}
+
 // simple matching logic: compare student requirements/scores to course requirements
 exports.matchStudentToCourses = async (req, res) => {
   try {
     const student = await Student.findByPk(req.params.studentId);
     if (!student) return res.status(404).json({ error: 'Student not found' });
 
-    const matches = await findMatches(student.scores || {}, student.requirements || {});
+    const resolvedRequirements = await resolvePreferredUniversityIds(student.requirements || {});
+    const matches = await findMatches(student.scores || {}, resolvedRequirements);
 
     res.json(matches);
   } catch (err) {
@@ -107,12 +134,13 @@ exports.matchManualInput = async (req, res) => {
   try {
     const scores = req.body.scores || {};
     const requirements = req.body.requirements || {};
-    const matches = await findMatches(scores, requirements);
+    const resolvedRequirements = await resolvePreferredUniversityIds(requirements);
+    const matches = await findMatches(scores, resolvedRequirements);
 
     res.json({
       input: {
         scores,
-        requirements,
+        requirements: resolvedRequirements,
         averageScore: calculateAverage(scores),
       },
       matches,

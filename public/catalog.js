@@ -80,7 +80,7 @@ async function loadUniversities() {
     .forEach((university) => {
       const option = document.createElement('option');
       option.value = university.id;
-      option.textContent = university.name;
+      option.textContent = `${university.abbreviation} - ${university.name}`;
       universitySelect.appendChild(option);
     });
 }

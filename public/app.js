@@ -5,6 +5,9 @@ const matchForm = document.getElementById('match-form');
 const formStatus = document.getElementById('form-status');
 const summary = document.getElementById('summary');
 const results = document.getElementById('results');
+const preferredUniversities = document.getElementById('preferred-universities');
+
+let universityOptions = [];
 
 function addSubjectRow(subject = '', score = '') {
   const fragment = subjectTemplate.content.cloneNode(true);
@@ -49,6 +52,31 @@ function renderResults(payload) {
   });
 }
 
+function renderUniversityOptions(universities) {
+  preferredUniversities.innerHTML = '';
+
+  universities.forEach((university) => {
+    const label = document.createElement('label');
+    label.className = 'university-option';
+    label.innerHTML = `
+      <input type="checkbox" name="preferredUniversities" value="${university.abbreviation}" />
+      <span>${university.abbreviation}</span>
+    `;
+    preferredUniversities.appendChild(label);
+  });
+}
+
+async function loadUniversities() {
+  const response = await fetch('/api/universities');
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(payload.error || 'Failed to load universities');
+  }
+
+  universityOptions = payload;
+  renderUniversityOptions(universityOptions);
+}
+
 addSubjectButton.addEventListener('click', () => addSubjectRow());
 
 matchForm.addEventListener('submit', async (event) => {
@@ -66,8 +94,9 @@ matchForm.addEventListener('submit', async (event) => {
   });
 
   const requirements = {};
-  if (formData.get('preferredUniversityId')) {
-    requirements.preferredUniversityId = formData.get('preferredUniversityId');
+  const selectedUniversities = formData.getAll('preferredUniversities');
+  if (selectedUniversities.length) {
+    requirements.preferredUniversities = selectedUniversities;
   }
   if (formData.get('preferredFaculty')) {
     requirements.preferredFaculty = formData.get('preferredFaculty');
@@ -93,3 +122,6 @@ matchForm.addEventListener('submit', async (event) => {
 addSubjectRow('Mathematics', 85);
 addSubjectRow('English', 78);
 addSubjectRow('Science', 82);
+loadUniversities().catch((error) => {
+  formStatus.textContent = error.message;
+});
