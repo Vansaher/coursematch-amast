@@ -53,4 +53,5 @@ function buildUpmCourseDetail(courseName) {
 
 module.exports = {
   buildUpmCourseDetail,
+  normalizeMalaysianProgrammeName,
 };

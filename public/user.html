@@ -47,9 +47,12 @@
           <p class="eyebrow">Student Portal</p>
           <h1>Match your scores to Malaysian university courses.</h1>
           <p class="lede">
-            Enter your scores manually for now. The system will rank possible course fits
-            using the imported university catalogue and any structured requirement data
-            available in the database.
+            Upload the official STPM result slip in PDF format. The system will extract the
+            subjects, convert them into matcher scores, and rank possible course fits using
+            the imported university catalogue and any structured requirement data available in
+            the database. When a course has no detailed requirement record, the backend can
+            use Alibaba Qwen to judge whether your subject combination still fits the course
+            logically.
           </p>
           <div class="hero-links">
             <a class="secondary-button" href="/catalog">Browse course catalog</a>
@@ -59,11 +62,15 @@
         <section class="panel-grid user-dashboard-grid">
           <form id="match-form" class="panel form-panel">
             <div class="panel-heading">
-              <h2>Manual Input</h2>
-              <p>Scores can be edited freely. Add as many subjects as you need.</p>
+              <h2>STPM PDF Upload</h2>
+              <p>Upload the result slip once. Subject rows are extracted automatically from the PDF.</p>
             </div>
 
             <div class="form-row">
+              <label>
+                STPM result PDF
+                <input id="result-file" type="file" name="resultFile" accept=".pdf,application/pdf" />
+              </label>
               <label>
                 Preferred universities
                 <div id="preferred-universities" class="university-multi-select"></div>
@@ -76,12 +83,9 @@
 
             <div class="subject-block">
               <div class="subject-header">
-                <h3>Subjects</h3>
-                <button type="button" id="add-subject" class="secondary-button">
-                  Add subject
-                </button>
+                <h3>Extracted subjects</h3>
               </div>
-              <div id="subjects"></div>
+              <div id="extracted-subjects" class="result-list compact-list"></div>
             </div>
 
             <div class="form-actions">
@@ -93,24 +97,16 @@
           <section class="panel summary-panel">
             <div class="panel-heading">
               <h2>Result Summary</h2>
-              <p>Top ranked courses appear below after you submit your scores.</p>
+              <p>Top ranked courses appear below after the STPM PDF is parsed successfully.</p>
             </div>
             <div id="summary" class="summary-placeholder">
-              No manual match has been run yet.
+              No STPM match has been run yet.
             </div>
             <div id="results" class="result-list"></div>
           </section>
         </section>
       </main>
     </div>
-
-    <template id="subject-template">
-      <div class="subject-row">
-        <input type="text" name="subject" placeholder="Subject name" />
-        <input type="number" name="score" min="0" max="100" step="0.01" placeholder="Score" />
-        <button type="button" class="danger-button remove-subject">Remove</button>
-      </div>
-    </template>
 
     <script src="/app.js"></script>
   </body>

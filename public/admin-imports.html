@@ -73,6 +73,9 @@
                   <option value="upm">UPM</option>
                   <option value="ukm">UKM</option>
                   <option value="um">UM</option>
+                  <option value="usm">USM</option>
+                  <option value="utm">UTM</option>
+                  <option value="uum">UUM</option>
                 </select>
               </label>
               <label>
@@ -91,9 +94,59 @@
               <input type="file" name="sourceFile" accept=".csv,.pdf,application/pdf,text/csv" />
             </label>
 
-            <button type="submit" class="primary-button">Run import</button>
+            <div class="switch-stack">
+              <label class="toggle-switch">
+                <input id="use-qwen-default" type="checkbox" name="useQwenDefault" value="true" checked />
+                <span class="toggle-slider" aria-hidden="true"></span>
+                <span class="toggle-copy">
+                  <strong>Use environment default for Qwen enrichment</strong>
+                  <span>Falls back to <code>IMPORT_QWEN_ENRICHMENT_DEFAULT</code> when this import runs.</span>
+                </span>
+              </label>
+
+              <label class="toggle-switch">
+                <input id="qwen-enrich-switch" type="checkbox" name="qwenEnrich" value="true" disabled />
+                <span class="toggle-slider" aria-hidden="true"></span>
+                <span class="toggle-copy">
+                  <strong>Enable Qwen-generated course details for this import</strong>
+                  <span>Overrides the environment default for this run only.</span>
+                </span>
+              </label>
+            </div>
+
+            <button type="submit" class="primary-button">Preview changes</button>
             <span id="imports-page-status" class="status-text"></span>
           </form>
+
+          <section class="import-progress-shell">
+            <div class="import-progress-header">
+              <strong>Import progress</strong>
+              <span id="imports-progress-text">Idle</span>
+            </div>
+            <div class="import-progress-track">
+              <div id="imports-progress-bar" class="import-progress-bar"></div>
+            </div>
+          </section>
+
+          <section id="imports-preview-panel" class="imports-preview-panel">
+            <div class="import-preview-toolbar">
+              <div>
+                <h3>Preview</h3>
+                <p id="imports-preview-summary" class="admin-panel-copy">No preview generated yet.</p>
+              </div>
+              <div class="import-preview-actions">
+                <button id="select-all-imports" type="button" class="secondary-button">Select all</button>
+                <button id="clear-all-imports" type="button" class="secondary-button">Clear all</button>
+                <button id="apply-selected-imports" type="button" class="primary-button" disabled>
+                  Apply selected
+                </button>
+              </div>
+            </div>
+            <div id="imports-change-list" class="imports-change-list">
+              <div class="summary-placeholder">Previewed changes will appear here.</div>
+            </div>
+          </section>
+
           <pre id="imports-page-output" class="code-output">No import run yet.</pre>
         </section>
       </main>

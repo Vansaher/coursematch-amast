@@ -63,6 +63,12 @@ app.get('/admin/login', (req, res) => {
 const { sequelize } = require('./models');
 const syncOptions = process.env.DB_SYNC_ALTER === 'true' ? { alter: true } : {};
 
+if (process.env.DB_SYNC_ALTER === 'true') {
+  console.warn(
+    'DB_SYNC_ALTER=true is enabled. On MySQL, repeated Sequelize alter syncs can create duplicate indexes.'
+  );
+}
+
 sequelize
   .authenticate()
   .then(() => {

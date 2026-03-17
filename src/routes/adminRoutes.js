@@ -10,5 +10,8 @@ router.post('/login', authController.login);
 router.post('/logout', authController.logout);
 router.get('/session', authController.session);
 router.post('/imports', requireAdminApi, upload.single('sourceFile'), controller.runImport);
+router.post('/imports/preview', requireAdminApi, upload.single('sourceFile'), controller.previewImport);
+router.post('/imports/apply', requireAdminApi, upload.single('sourceFile'), controller.applyImport);
+router.get('/imports/jobs/:jobId', requireAdminApi, controller.getImportJob);
 
 module.exports = router;
