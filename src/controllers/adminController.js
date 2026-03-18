@@ -17,12 +17,30 @@ function normalizeSelectedCourseSourceUrls(value) {
   return [value];
 }
 
+function normalizeSelectedCourseOperations(value) {
+  const values = Array.isArray(value) ? value : value ? [value] : [];
+  return values
+    .map((item) => {
+      try {
+        const parsed = typeof item === 'string' ? JSON.parse(item) : item;
+        return parsed && parsed.id ? parsed : null;
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+}
+
 exports.runImport = async (req, res) => {
   try {
     const scraperKey = req.body.scraperKey || 'upm';
     const limit = req.body.limit;
     const sourceUrl = req.body.sourceUrl;
     const qwenEnrich = req.body.qwenEnrich;
+    const normalizeCourseName = req.body.normalizeCourseName;
+    const generalRequirementStpm = req.body.generalRequirementStpm;
+    const generalRequirementMatriculation = req.body.generalRequirementMatriculation;
+    const generalRequirementDiplomaEquivalent = req.body.generalRequirementDiplomaEquivalent;
     const sourceFile = req.file
       ? {
           originalName: req.file.originalname,
@@ -35,6 +53,10 @@ exports.runImport = async (req, res) => {
       limit,
       sourceUrl,
       qwenEnrich,
+      normalizeCourseName,
+      generalRequirementStpm,
+      generalRequirementMatriculation,
+      generalRequirementDiplomaEquivalent,
       sourceFile,
     });
     res.json(result);
@@ -49,6 +71,10 @@ exports.previewImport = async (req, res) => {
     const limit = req.body.limit;
     const sourceUrl = req.body.sourceUrl;
     const qwenEnrich = req.body.qwenEnrich;
+    const normalizeCourseName = req.body.normalizeCourseName;
+    const generalRequirementStpm = req.body.generalRequirementStpm;
+    const generalRequirementMatriculation = req.body.generalRequirementMatriculation;
+    const generalRequirementDiplomaEquivalent = req.body.generalRequirementDiplomaEquivalent;
     const sourceFile = req.file
       ? {
           originalName: req.file.originalname,
@@ -67,6 +93,10 @@ exports.previewImport = async (req, res) => {
         limit,
         sourceUrl,
         qwenEnrich,
+        normalizeCourseName,
+        generalRequirementStpm,
+        generalRequirementMatriculation,
+        generalRequirementDiplomaEquivalent,
         sourceFile,
         onProgress: (patch) => updateJob(job.id, patch),
       })
@@ -83,7 +113,12 @@ exports.applyImport = async (req, res) => {
     const limit = req.body.limit;
     const sourceUrl = req.body.sourceUrl;
     const qwenEnrich = req.body.qwenEnrich;
+    const normalizeCourseName = req.body.normalizeCourseName;
+    const generalRequirementStpm = req.body.generalRequirementStpm;
+    const generalRequirementMatriculation = req.body.generalRequirementMatriculation;
+    const generalRequirementDiplomaEquivalent = req.body.generalRequirementDiplomaEquivalent;
     const selectedCourseSourceUrls = normalizeSelectedCourseSourceUrls(req.body.selectedCourseSourceUrls);
+    const selectedCourseOperations = normalizeSelectedCourseOperations(req.body.selectedCourseOperations);
     const sourceFile = req.file
       ? {
           originalName: req.file.originalname,
@@ -103,8 +138,13 @@ exports.applyImport = async (req, res) => {
         limit,
         sourceUrl,
         qwenEnrich,
+        normalizeCourseName,
+        generalRequirementStpm,
+        generalRequirementMatriculation,
+        generalRequirementDiplomaEquivalent,
         sourceFile,
         selectedCourseSourceUrls,
+        selectedCourseOperations,
         onProgress: (patch) => updateJob(job.id, patch),
       })
     );

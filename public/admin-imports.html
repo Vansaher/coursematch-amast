@@ -27,7 +27,7 @@
         <nav class="admin-nav">
           <a class="admin-nav-item" href="/admin">Dashboard</a>
           <a class="admin-nav-item active" href="/admin/imports">Imports</a>
-          <a class="admin-nav-item" href="/catalog">Catalog</a>
+          <a class="admin-nav-item" href="/admin/catalog">Catalog</a>
           <a class="admin-nav-item" href="/user">User portal</a>
         </nav>
 
@@ -94,6 +94,33 @@
               <input type="file" name="sourceFile" accept=".csv,.pdf,application/pdf,text/csv" />
             </label>
 
+            <label>
+              General entry requirements: STPM
+              <textarea
+                name="generalRequirementStpm"
+                rows="6"
+                placeholder="Paste the general STPM entry requirements here. Qwen will normalize them and apply them to courses that do not have specific requirements."
+              ></textarea>
+            </label>
+
+            <label>
+              General entry requirements: Matriculation
+              <textarea
+                name="generalRequirementMatriculation"
+                rows="6"
+                placeholder="Paste the general Matriculation entry requirements here."
+              ></textarea>
+            </label>
+
+            <label>
+              General entry requirements: Diploma / Equivalent
+              <textarea
+                name="generalRequirementDiplomaEquivalent"
+                rows="6"
+                placeholder="Paste the general Diploma / Equivalent entry requirements here."
+              ></textarea>
+            </label>
+
             <div class="switch-stack">
               <label class="toggle-switch">
                 <input id="use-qwen-default" type="checkbox" name="useQwenDefault" value="true" checked />
@@ -105,11 +132,11 @@
               </label>
 
               <label class="toggle-switch">
-                <input id="qwen-enrich-switch" type="checkbox" name="qwenEnrich" value="true" disabled />
+                <input id="normalize-course-name-switch" type="checkbox" name="normalizeCourseName" value="true" />
                 <span class="toggle-slider" aria-hidden="true"></span>
                 <span class="toggle-copy">
-                  <strong>Enable Qwen-generated course details for this import</strong>
-                  <span>Overrides the environment default for this run only.</span>
+                  <strong>Normalize course name</strong>
+                  <span>Trim imported names so they stop at “with Honours”, “dengan Kepujian”, or before trailing descriptive text such as “is”.</span>
                 </span>
               </label>
             </div>

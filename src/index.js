@@ -6,7 +6,7 @@ const courseRoutes = require('./routes/courseRoutes');
 const matchRoutes = require('./routes/matchRoutes');
 const universityRoutes = require('./routes/universityRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-const { getSessionFromRequest } = require('./utils/adminAuth');
+const { getSessionFromRequest, requireAdminPage } = require('./utils/adminAuth');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -35,19 +35,15 @@ app.get('/catalog', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'catalog.html'));
 });
 
-app.get('/admin', (req, res) => {
-  const session = getSessionFromRequest(req);
-  if (!session) {
-    return res.redirect('/admin/login');
-  }
+app.get('/admin/catalog', requireAdminPage, (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'admin-catalog.html'));
+});
+
+app.get('/admin', requireAdminPage, (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'admin.html'));
 });
 
-app.get('/admin/imports', (req, res) => {
-  const session = getSessionFromRequest(req);
-  if (!session) {
-    return res.redirect('/admin/login');
-  }
+app.get('/admin/imports', requireAdminPage, (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'admin-imports.html'));
 });
 

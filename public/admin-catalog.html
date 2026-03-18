@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Course Catalogue</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="page-shell admin-shell">
+    <div class="backdrop"></div>
+    <div class="admin-dashboard">
+      <aside class="admin-sidebar">
+        <div class="admin-brand">
+          <div class="admin-brand-mark">A</div>
+          <div class="admin-brand-copy">
+            <strong>AMAST</strong>
+            <span>Course Matching</span>
+          </div>
+        </div>
+
+        <nav class="admin-nav">
+          <a class="admin-nav-item" href="/admin">Dashboard</a>
+          <a class="admin-nav-item" href="/admin/imports">Imports</a>
+          <a class="admin-nav-item active" href="/admin/catalog">Catalog</a>
+          <a class="admin-nav-item" href="/user">User portal</a>
+        </nav>
+
+        <div class="admin-sidebar-footer">
+          <button id="logout-button" class="secondary-button sidebar-button" type="button">
+            Log out
+          </button>
+        </div>
+      </aside>
+
+      <main class="admin-main">
+        <header class="admin-topbar">
+          <div class="admin-toolbar-spacer"></div>
+          <div class="admin-toolbar-user">
+            <div class="admin-toolbar-dot"></div>
+            <div class="admin-avatar">A</div>
+            <div class="admin-user-copy">
+              <strong>Admin</strong>
+              <span>Catalogue editor</span>
+            </div>
+          </div>
+        </header>
+
+        <section class="admin-hero-banner">
+          <h1>Catalog</h1>
+          <p>Browse, edit, and remove imported course records by university and faculty.</p>
+        </section>
+
+        <section class="panel catalog-panel">
+          <div class="panel-heading">
+            <h2>University Selector</h2>
+            <p>Choose a university, then edit course cards directly from the catalogue.</p>
+          </div>
+          <div class="catalog-toolbar">
+            <label class="catalog-select-label">
+              University
+              <select id="catalog-university-select">
+                <option value="">Select a university</option>
+              </select>
+            </label>
+          </div>
+          <div id="catalog-status" class="status-text"></div>
+          <div id="catalog-groups" class="catalog-groups"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/admin-catalog.js"></script>
+  </body>
+</html>

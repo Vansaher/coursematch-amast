@@ -10,6 +10,10 @@ const { buildUpmCourseDetail } = require('./upmCourseDetails');
 const { discoverUpmCourseDetails } = require('./upmDetailDiscovery');
 const { extractUpmDetail } = require('./upmDetailExtractor');
 const { enrichCourseDetails, isQwenConfigured } = require('./qwenCourseEnrichment');
+const {
+  normalizeGeneralEntryRequirements,
+  buildCombinedEntryRequirements,
+} = require('./qwenGeneralEntryRequirements');
 const fs = require('fs/promises');
 const path = require('path');
 
@@ -79,6 +83,107 @@ function parseBooleanOption(value, fallback = false) {
   }
 
   return fallback;
+}
+
+function hasCourseSpecificEntryRequirements(coursePayload = {}) {
+  const requirements = coursePayload.requirements || {};
+  return Boolean(
+    normalizeTextBlock(coursePayload.entryRequirements) ||
+      (Array.isArray(requirements.subjects) && requirements.subjects.length) ||
+      normalizeTextBlock(requirements.languageExam) ||
+      normalizeTextBlock(requirements.minAverage)
+  );
+}
+
+function normalizeTextBlock(value = '') {
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+function mergeRequirementSubjects(existingSubjects = [], fallbackSubjects = []) {
+  const seen = new Set();
+  return [...existingSubjects, ...fallbackSubjects].filter((item) => {
+    const key =
+      typeof item === 'string'
+        ? normalizeTextBlock(item).toLowerCase()
+        : normalizeTextBlock(item?.name || item?.subject || '').toLowerCase();
+    if (!key || seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
+function applyGeneralEntryRequirementFallback(coursePayload, options = {}) {
+  const generalRequirements = options.generalEntryRequirements;
+  if (!generalRequirements || hasCourseSpecificEntryRequirements(coursePayload)) {
+    return coursePayload;
+  }
+
+  const combinedEntryRequirements = buildCombinedEntryRequirements(generalRequirements);
+  if (!combinedEntryRequirements) {
+    return coursePayload;
+  }
+
+  const stpm = generalRequirements.stpm || null;
+  const existingRequirements = coursePayload.requirements || {};
+
+  return {
+    ...coursePayload,
+    entryRequirements: combinedEntryRequirements,
+    requirements: {
+      ...existingRequirements,
+      subjects: mergeRequirementSubjects(existingRequirements.subjects || [], stpm?.structuredRequirements?.subjects || []),
+      languageExam: existingRequirements.languageExam || stpm?.structuredRequirements?.languageExam || null,
+      pathways: generalRequirements,
+    },
+    metadata: {
+      ...(coursePayload.metadata || {}),
+      generalEntryRequirementsApplied: true,
+      generalEntryRequirements: generalRequirements,
+    },
+  };
+}
+
+function normalizeImportedCourseName(name = '') {
+  const value = normalizeTextBlock(name);
+  if (!value) {
+    return value;
+  }
+
+  const honoursMatch = value.match(/^(.*?\b(with honours|with honor|dengan kepujian)\b)/i);
+  if (honoursMatch) {
+    return normalizeTextBlock(honoursMatch[1]);
+  }
+
+  const cutoffPatterns = [/\s+\bis\b\s+/i, /\s+offered by\s+/i, /\s+yang\s+/i];
+  for (const pattern of cutoffPatterns) {
+    const parts = value.split(pattern);
+    if (parts.length > 1) {
+      return normalizeTextBlock(parts[0]);
+    }
+  }
+
+  return value;
+}
+
+function maybeNormalizeCourseName(coursePayload, options = {}) {
+  if (!parseBooleanOption(options.normalizeCourseName, false)) {
+    return coursePayload;
+  }
+
+  const normalizedName = normalizeImportedCourseName(coursePayload.name);
+  return {
+    ...coursePayload,
+    name: normalizedName || coursePayload.name,
+    metadata: {
+      ...(coursePayload.metadata || {}),
+      originalImportedName: coursePayload.name,
+      courseNameNormalized: normalizedName !== coursePayload.name,
+    },
+  };
 }
 
 async function maybeEnrichCoursePayload(coursePayload, universityPayload, options = {}) {
@@ -156,6 +261,13 @@ function mergeCourseMetadata(baseMetadata, detailPayload, extractedDetail) {
   };
 }
 
+function buildComparableMetadata(course) {
+  return {
+    detailUrl: course.metadata?.detailUrl || null,
+    detailSourceType: course.metadata?.detailSourceType || null,
+  };
+}
+
 async function buildPreparedMultiCourseRecords(scraper, scraped, options = {}) {
   const records = [];
   let enrichedCount = 0;
@@ -187,14 +299,14 @@ async function buildPreparedMultiCourseRecords(scraper, scraped, options = {}) {
           })
         : null;
 
-    const baseCoursePayload = {
+    const baseCoursePayload = applyGeneralEntryRequirementFallback(maybeNormalizeCourseName({
       ...coursePayload,
       description: extractedDetail?.description || coursePayload.description,
       durationText: extractedDetail?.durationText || detailPayload?.durationText || coursePayload.durationText,
       entryRequirements: extractedDetail?.entryRequirements || coursePayload.entryRequirements,
       requirements: extractedDetail?.requirements || coursePayload.requirements,
       metadata: mergeCourseMetadata(coursePayload.metadata, detailPayload, extractedDetail),
-    };
+    }, options), options);
 
     const detailedCoursePayload = await maybeEnrichCoursePayload(
       baseCoursePayload,
@@ -240,7 +352,11 @@ async function buildPreparedMultiCourseRecords(scraper, scraped, options = {}) {
 }
 
 async function buildPreparedSingleCourseRecord(scraper, scraped, options = {}) {
-  const course = await maybeEnrichCoursePayload(scraped.course, scraped.university, options);
+  const course = await maybeEnrichCoursePayload(
+    applyGeneralEntryRequirementFallback(maybeNormalizeCourseName(scraped.course, options), options),
+    scraped.university,
+    options
+  );
   return {
     university: scraped.university,
     records: [
@@ -274,6 +390,7 @@ function comparableCourse(course) {
     name: course.name || null,
     faculty: course.faculty || null,
     description: course.description || null,
+    studyMode: course.studyMode || null,
     durationText: course.durationText || null,
     entryRequirements: course.entryRequirements || null,
     detailUrl: course.metadata?.detailUrl || null,
@@ -324,6 +441,7 @@ async function previewSingleCourseImport(scraper, url, options = {}) {
         newCourse,
         displayName: record.course.name,
         universityName: prepared.university?.name || null,
+        deletable: Boolean(existing),
         metadata: {
           detailUrl: record.course.metadata?.detailUrl || null,
           detailSourceType: record.course.metadata?.detailSourceType || null,
@@ -334,9 +452,14 @@ async function previewSingleCourseImport(scraper, url, options = {}) {
 }
 
 async function applyPreparedImport(prepared, options = {}) {
-  const selectedSourceUrls = new Set(
-    Array.isArray(options.selectedCourseSourceUrls) ? options.selectedCourseSourceUrls.map((value) => String(value)) : []
+  const selectedOperations = new Map(
+    Array.isArray(options.selectedCourseOperations)
+      ? options.selectedCourseOperations
+          .filter((item) => item && item.id)
+          .map((item) => [String(item.id), item])
+      : []
   );
+  const selectedSourceUrls = new Set(selectedOperations.keys());
   const shouldFilter = selectedSourceUrls.size > 0;
 
   return sequelize.transaction(async (transaction) => {
@@ -352,28 +475,93 @@ async function applyPreparedImport(prepared, options = {}) {
     let importedCount = 0;
 
     for (const record of prepared.records) {
-      if (shouldFilter && !selectedSourceUrls.has(String(record.course.sourceUrl))) {
+      const sourceUrl = String(record.course.sourceUrl);
+      if (shouldFilter && !selectedSourceUrls.has(sourceUrl)) {
         continue;
       }
 
-      const [course] = await Course.findOrCreate({
+      const operation = selectedOperations.get(sourceUrl) || {};
+      const selectedFields = Array.isArray(operation.fields) ? operation.fields : [];
+      const shouldDelete = Boolean(operation.delete);
+
+      const existing = await Course.findOne({
         where: { sourceUrl: record.course.sourceUrl },
-        defaults: {
-          ...record.course,
-          universityId: university.id,
-          lastScrapedAt: new Date(),
-        },
         transaction,
       });
 
-      await course.update(
-        {
-          ...record.course,
-          universityId: university.id,
-          lastScrapedAt: new Date(),
-        },
-        { transaction }
-      );
+      if (shouldDelete) {
+        if (existing) {
+          await CourseModule.destroy({
+            where: { courseId: existing.id },
+            transaction,
+          });
+          await existing.destroy({ transaction });
+          importedCount += 1;
+          reportProgress(options, {
+            stage: 'writing_database',
+            message: `Deleted ${existing.name}`,
+            counters: {
+              totalCoursesToWrite: shouldFilter ? selectedSourceUrls.size : prepared.records.length,
+              writtenCourses: importedCount,
+            },
+          });
+        }
+        continue;
+      }
+
+      const defaults = {
+        ...record.course,
+        universityId: university.id,
+        lastScrapedAt: new Date(),
+      };
+      const [course] = existing
+        ? [existing]
+        : await Course.findOrCreate({
+            where: { sourceUrl: record.course.sourceUrl },
+            defaults,
+            transaction,
+          });
+
+      const metadata = {
+        ...(course.metadata || {}),
+        ...(record.course.metadata || {}),
+      };
+      if (!selectedFields.length || selectedFields.includes('detailUrl') || selectedFields.includes('detailSourceType')) {
+        metadata.detailUrl = record.course.metadata?.detailUrl || null;
+        metadata.detailSourceType = record.course.metadata?.detailSourceType || null;
+      }
+
+      const directFieldPatch = shouldFilter && existing
+        ? Object.fromEntries(
+            ['name', 'faculty', 'description', 'studyMode', 'durationText', 'entryRequirements']
+              .filter((field) => selectedFields.includes(field))
+              .map((field) => [field, record.course[field]])
+          )
+        : {
+            name: record.course.name,
+            faculty: record.course.faculty,
+            description: record.course.description,
+            studyMode: record.course.studyMode,
+            durationText: record.course.durationText,
+            entryRequirements: record.course.entryRequirements,
+          };
+
+      const updatePayload =
+        existing && shouldFilter && selectedFields.length
+          ? {
+              ...directFieldPatch,
+              metadata,
+              universityId: university.id,
+              lastScrapedAt: new Date(),
+            }
+          : {
+              ...record.course,
+              metadata,
+              universityId: university.id,
+              lastScrapedAt: new Date(),
+            };
+
+      await course.update(updatePayload, { transaction });
 
       await replaceCourseModules(course.id, record.modules || [], transaction);
       importedCount += 1;
@@ -417,6 +605,17 @@ async function importUniversityCourses(scraperKey, options = {}) {
     progress: 2,
   });
   await sequelize.sync(syncOptions);
+  reportProgress(options, {
+    stage: 'normalizing_general_requirements',
+    message: 'Normalizing general entry requirements',
+    progress: 4,
+  });
+  const generalEntryRequirements = await normalizeGeneralEntryRequirements({
+    stpm: options.generalRequirementStpm,
+    matriculation: options.generalRequirementMatriculation,
+    diplomaEquivalent: options.generalRequirementDiplomaEquivalent,
+  });
+  options.generalEntryRequirements = generalEntryRequirements;
 
   let discoveredUrls;
   if (options.sourceUrl) {
@@ -514,6 +713,17 @@ async function previewUniversityCourses(scraperKey, options = {}) {
     progress: 2,
   });
   await sequelize.sync(syncOptions);
+  reportProgress(options, {
+    stage: 'normalizing_general_requirements',
+    message: 'Normalizing general entry requirements',
+    progress: 4,
+  });
+  const generalEntryRequirements = await normalizeGeneralEntryRequirements({
+    stpm: options.generalRequirementStpm,
+    matriculation: options.generalRequirementMatriculation,
+    diplomaEquivalent: options.generalRequirementDiplomaEquivalent,
+  });
+  options.generalEntryRequirements = generalEntryRequirements;
 
   let discoveredUrls;
   if (options.sourceUrl) {

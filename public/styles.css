@@ -404,13 +404,19 @@ textarea {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   border: 1px solid rgba(19, 38, 26, 0.15);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.82);
   padding: 12px 14px;
   color: var(--ink);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 120px;
 }
 
 button {
@@ -494,6 +500,28 @@ button:hover {
   margin-top: 10px;
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+.match-explainer {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid #e1e8f1;
+  border-radius: 16px;
+  background: rgba(248, 251, 255, 0.92);
+}
+
+.match-explainer strong {
+  display: block;
+  margin-bottom: 10px;
+  color: #2a4d7f;
+}
+
+.match-explainer ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #4e5f77;
+  display: grid;
+  gap: 8px;
 }
 
 .match-badge {
@@ -981,8 +1009,8 @@ button:hover {
   border: 1px solid #dfe6ef;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.92);
-  padding: 18px;
   box-shadow: 0 10px 24px rgba(69, 85, 112, 0.06);
+  overflow: hidden;
 }
 
 .import-change-card.update {
@@ -993,10 +1021,48 @@ button:hover {
   border-color: rgba(38, 190, 89, 0.28);
 }
 
-.import-change-header {
+.import-change-card.marked-delete {
+  border-color: rgba(158, 43, 37, 0.34);
+  background: rgba(255, 248, 248, 0.96);
+}
+
+.import-change-summary {
+  list-style: none;
   display: grid;
   gap: 10px;
-  margin-bottom: 14px;
+  padding: 18px;
+  cursor: pointer;
+}
+
+.import-change-summary::-webkit-details-marker {
+  display: none;
+}
+
+.import-change-body {
+  padding: 0 18px 18px;
+  display: grid;
+  gap: 16px;
+}
+
+.import-change-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.import-change-toolbar-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.import-change-toolbar-copy span {
+  color: #667488;
+}
+
+.import-change-toolbar-actions {
+  display: flex;
+  gap: 10px;
 }
 
 .import-change-select {
@@ -1010,13 +1076,12 @@ button:hover {
   width: auto;
 }
 
-.import-diff-grid {
+.import-field-list {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 14px;
 }
 
-.import-diff-pane {
+.import-diff-field {
   border: 1px solid #e1e8f1;
   border-radius: 16px;
   background: #fbfdff;
@@ -1025,21 +1090,46 @@ button:hover {
   gap: 12px;
 }
 
-.import-diff-pane h4 {
-  margin: 0;
-  color: #5d6b7e;
+.import-diff-field.changed {
+  border-color: rgba(62, 125, 232, 0.28);
+  background: #f8fbff;
 }
 
-.import-diff-field {
-  display: grid;
-  gap: 6px;
+.import-diff-field-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
 }
 
-.import-diff-field strong {
+.import-diff-field-head strong,
+.import-field-pane-label {
   font-size: 0.84rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #728094;
+}
+
+.import-field-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.86rem;
+}
+
+.import-field-select input {
+  width: auto;
+}
+
+.import-diff-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.import-diff-field-column {
+  display: grid;
+  gap: 6px;
 }
 
 .import-diff-field pre,
@@ -1119,6 +1209,48 @@ button:hover {
 .catalog-course-card {
   background: #fff;
   border-color: #e1e8f1;
+}
+
+.admin-catalog-card {
+  position: relative;
+  padding-top: 24px;
+}
+
+.catalog-edit-button {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 14px;
+  background: rgba(23, 127, 216, 0.1);
+  color: #177fd8;
+  display: grid;
+  place-items: center;
+}
+
+.catalog-edit-button svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.catalog-edit-shell {
+  margin-top: 14px;
+  border-top: 1px solid #e1e8f1;
+  padding-top: 14px;
+}
+
+.catalog-edit-form {
+  display: grid;
+  gap: 12px;
+}
+
+.catalog-edit-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .university-multi-select {
@@ -1202,9 +1334,14 @@ button:hover {
   }
 
   .import-preview-toolbar,
-  .import-diff-grid {
+  .import-diff-field-grid {
     grid-template-columns: 1fr;
     display: grid;
+  }
+
+  .import-change-toolbar {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .landing-visual {

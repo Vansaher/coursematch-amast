@@ -10,17 +10,19 @@ const selectAllImportsButton = document.getElementById('select-all-imports');
 const clearAllImportsButton = document.getElementById('clear-all-imports');
 const applySelectedImportsButton = document.getElementById('apply-selected-imports');
 const useQwenDefaultSwitch = document.getElementById('use-qwen-default');
-const qwenEnrichSwitch = document.getElementById('qwen-enrich-switch');
 
 let currentPreview = null;
 let activeJobPoll = null;
 
-function syncQwenSwitchState() {
-  const useDefault = Boolean(useQwenDefaultSwitch?.checked);
-  if (qwenEnrichSwitch) {
-    qwenEnrichSwitch.disabled = useDefault;
-  }
-}
+const PREVIEW_FIELDS = [
+  ['name', 'Name'],
+  ['faculty', 'Faculty'],
+  ['description', 'Description'],
+  ['studyMode', 'Study mode'],
+  ['durationText', 'Duration'],
+  ['entryRequirements', 'Entry requirements'],
+  ['detailUrl', 'Detail URL'],
+];
 
 function buildImportFormData() {
   const formData = new FormData(importsForm);
@@ -28,7 +30,7 @@ function buildImportFormData() {
 
   formData.delete('qwenEnrich');
   if (!useDefault) {
-    formData.set('qwenEnrich', qwenEnrichSwitch?.checked ? 'true' : 'false');
+    formData.set('qwenEnrich', 'false');
   }
 
   return formData;
@@ -79,40 +81,59 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
-function formatCoursePane(course) {
-  if (!course) {
-    return '<div class="import-diff-empty">No existing record</div>';
-  }
+function selectedOperations() {
+  return [...importsChangeList.querySelectorAll('.import-change-card')].flatMap((card) => {
+    const id = card.dataset.changeId;
+    const courseSelected = card.querySelector('.import-course-select')?.checked;
+    const deleteSelected = card.querySelector('.import-delete-toggle')?.dataset.deleteSelected === 'true';
+    const fields = [...card.querySelectorAll('.import-field-select input:checked')].map((input) => input.value);
 
-  const fields = [
-    ['Name', course.name],
-    ['Faculty', course.faculty],
-    ['Description', course.description],
-    ['Duration', course.durationText],
-    ['Entry requirements', course.entryRequirements],
-    ['Detail URL', course.detailUrl],
-  ];
+    if (deleteSelected && courseSelected) {
+      return [{ id, delete: true, fields: [] }];
+    }
 
-  return fields
-    .map(
-      ([label, value]) => `
-        <div class="import-diff-field">
-          <strong>${escapeHtml(label)}</strong>
-          <pre>${escapeHtml(value || '-')}</pre>
-        </div>
-      `
-    )
-    .join('');
-}
+    if (courseSelected || fields.length) {
+      return [{ id, delete: false, fields }];
+    }
 
-function selectedPreviewIds() {
-  return [...importsChangeList.querySelectorAll('input[name="selectedImportChanges"]:checked')].map(
-    (input) => input.value
-  );
+    return [];
+  });
 }
 
 function refreshApplyButtonState() {
-  applySelectedImportsButton.disabled = selectedPreviewIds().length === 0;
+  applySelectedImportsButton.disabled = selectedOperations().length === 0;
+}
+
+function syncCardState(card) {
+  const courseCheckbox = card.querySelector('.import-course-select');
+  const deleteButton = card.querySelector('.import-delete-toggle');
+  const fieldInputs = [...card.querySelectorAll('.import-field-select input')];
+  const deleteSelected = deleteButton?.dataset.deleteSelected === 'true';
+
+  fieldInputs.forEach((input) => {
+    input.disabled = deleteSelected;
+  });
+
+  if (deleteSelected && courseCheckbox) {
+    courseCheckbox.checked = true;
+  }
+
+  if (!deleteSelected && courseCheckbox && !fieldInputs.some((input) => input.checked)) {
+    courseCheckbox.checked = false;
+  }
+
+  if (!deleteSelected && courseCheckbox && fieldInputs.some((input) => input.checked)) {
+    courseCheckbox.checked = true;
+  }
+
+  if (deleteButton) {
+    deleteButton.textContent = deleteSelected ? 'Undo delete' : 'Delete entry';
+    deleteButton.classList.toggle('danger-button', !deleteSelected);
+    deleteButton.classList.toggle('secondary-button', deleteSelected);
+  }
+
+  card.classList.toggle('marked-delete', deleteSelected);
+  refreshApplyButtonState();
 }
 
 async function pollJob(jobId, onComplete) {
@@ -157,6 +178,39 @@ async function pollJob(jobId, onComplete) {
   }
 }
 
+function fieldMarkup(change, field, label) {
+  const oldValue = change.oldCourse?.[field] || '-';
+  const newValue = change.newCourse?.[field] || '-';
+  const changed = change.action === 'create' || (change.changedFields || []).includes(field);
+  const checked = change.action === 'create' ? true : changed;
+
+  return `
+    <div class="import-diff-field ${changed ? 'changed' : ''}">
+      <div class="import-diff-field-head">
+        <strong>${escapeHtml(label)}</strong>
+        <label class="import-field-select">
+          <input
+            type="checkbox"
+            value="${escapeHtml(field)}"
+            ${checked ? 'checked' : ''}
+          />
+          <span>Apply</span>
+        </label>
+      </div>
+      <div class="import-diff-field-grid">
+        <div class="import-diff-field-column">
+          <span class="import-field-pane-label">Current</span>
+          <pre>${escapeHtml(oldValue)}</pre>
+        </div>
+        <div class="import-diff-field-column">
+          <span class="import-field-pane-label">Incoming</span>
+          <pre>${escapeHtml(newValue)}</pre>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderPreview(preview) {
   currentPreview = preview;
   importsPreviewSummary.textContent =
@@ -170,15 +224,18 @@ function renderPreview(preview) {
   }
 
   importsChangeList.innerHTML = preview.changes
-    .map(
-      (change) => `
-        <article class="import-change-card ${change.action}">
-          <div class="import-change-header">
+    .map((change) => {
+      const deleteButton = change.deletable
+        ? `<button type="button" class="import-delete-toggle danger-button" data-delete-selected="false">Delete entry</button>`
+        : '';
+
+      return `
+        <details class="import-change-card ${escapeHtml(change.action)}" data-change-id="${escapeHtml(change.id)}" open>
+          <summary class="import-change-summary">
             <label class="import-change-select">
               <input
                 type="checkbox"
-                name="selectedImportChanges"
-                value="${escapeHtml(change.id)}"
+                class="import-course-select"
                 ${change.selectedByDefault ? 'checked' : ''}
               />
               <span>${escapeHtml(change.displayName)}</span>
@@ -188,26 +245,61 @@ function renderPreview(preview) {
               <span>${escapeHtml(change.action.toUpperCase())}</span>
               <span>${escapeHtml((change.changedFields || []).join(', ') || 'No field changes')}</span>
             </div>
+          </summary>
+          <div class="import-change-body">
+            <div class="import-change-toolbar">
+              <div class="import-change-toolbar-copy">
+                <strong>Choose fields to apply</strong>
+                <span>Use the tick boxes beside each field. Delete removes the existing database record.</span>
+              </div>
+              <div class="import-change-toolbar-actions">
+                ${deleteButton}
+              </div>
+            </div>
+            <div class="import-field-list">
+              ${PREVIEW_FIELDS.map(([field, label]) => fieldMarkup(change, field, label)).join('')}
+            </div>
           </div>
-          <div class="import-diff-grid">
-            <section class="import-diff-pane">
-              <h4>Current</h4>
-              ${formatCoursePane(change.oldCourse)}
-            </section>
-            <section class="import-diff-pane">
-              <h4>Incoming</h4>
-              ${formatCoursePane(change.newCourse)}
-            </section>
-          </div>
-        </article>
-      `
-    )
+        </details>
+      `;
+    })
     .join('');
 
-  importsChangeList.querySelectorAll('input[name="selectedImportChanges"]').forEach((input) => {
-    input.addEventListener('change', refreshApplyButtonState);
+  importsChangeList.querySelectorAll('.import-change-card').forEach((card) => {
+    const courseCheckbox = card.querySelector('.import-course-select');
+    const fieldInputs = [...card.querySelectorAll('.import-field-select input')];
+    const deleteButton = card.querySelector('.import-delete-toggle');
+
+    courseCheckbox?.addEventListener('change', () => {
+      const checked = courseCheckbox.checked;
+      if (deleteButton?.dataset.deleteSelected === 'true' && !checked) {
+        deleteButton.dataset.deleteSelected = 'false';
+      }
+      fieldInputs.forEach((input) => {
+        if (!input.disabled) {
+          input.checked = checked;
+        }
+      });
+      syncCardState(card);
+    });
+
+    fieldInputs.forEach((input) => {
+      input.addEventListener('change', () => syncCardState(card));
+    });
+
+    deleteButton?.addEventListener('click', () => {
+      const nextState = deleteButton.dataset.deleteSelected !== 'true';
+      deleteButton.dataset.deleteSelected = String(nextState);
+      if (nextState) {
+        fieldInputs.forEach((input) => {
+          input.checked = false;
+        });
+      }
+      syncCardState(card);
+    });
+
+    syncCardState(card);
   });
-  refreshApplyButtonState();
 }
 
 importsForm.addEventListener('submit', async (event) => {
@@ -236,22 +328,36 @@ importsForm.addEventListener('submit', async (event) => {
 });
 
 selectAllImportsButton.addEventListener('click', () => {
-  importsChangeList.querySelectorAll('input[name="selectedImportChanges"]').forEach((input) => {
-    input.checked = true;
+  importsChangeList.querySelectorAll('.import-change-card').forEach((card) => {
+    const deleteButton = card.querySelector('.import-delete-toggle');
+    if (deleteButton) {
+      deleteButton.dataset.deleteSelected = 'false';
+    }
+    card.querySelector('.import-course-select').checked = true;
+    card.querySelectorAll('.import-field-select input').forEach((input) => {
+      input.checked = true;
+    });
+    syncCardState(card);
   });
-  refreshApplyButtonState();
 });
 
 clearAllImportsButton.addEventListener('click', () => {
-  importsChangeList.querySelectorAll('input[name="selectedImportChanges"]').forEach((input) => {
-    input.checked = false;
+  importsChangeList.querySelectorAll('.import-change-card').forEach((card) => {
+    const deleteButton = card.querySelector('.import-delete-toggle');
+    if (deleteButton) {
+      deleteButton.dataset.deleteSelected = 'false';
+    }
+    card.querySelector('.import-course-select').checked = false;
+    card.querySelectorAll('.import-field-select input').forEach((input) => {
+      input.checked = false;
+    });
+    syncCardState(card);
   });
-  refreshApplyButtonState();
 });
 
 applySelectedImportsButton.addEventListener('click', async () => {
-  const selectedIds = selectedPreviewIds();
-  if (!selectedIds.length) {
+  const operations = selectedOperations();
+  if (!operations.length) {
     return;
   }
 
@@ -259,7 +365,10 @@ applySelectedImportsButton.addEventListener('click', async () => {
   setProgress(5, 'Starting apply');
 
   const formData = buildImportFormData();
-  selectedIds.forEach((id) => formData.append('selectedCourseSourceUrls', id));
+  operations.forEach((operation) => {
+    formData.append('selectedCourseOperations', JSON.stringify(operation));
+    formData.append('selectedCourseSourceUrls', operation.id);
+  });
 
   try {
     const payload = await fetchJson('/api/admin/imports/apply', {
@@ -277,6 +386,3 @@ applySelectedImportsButton.addEventListener('click', async () => {
     setProgress(100, 'Apply failed');
   }
 });
-
-useQwenDefaultSwitch?.addEventListener('change', syncQwenSwitchState);
-syncQwenSwitchState();

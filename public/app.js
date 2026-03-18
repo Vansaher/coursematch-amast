@@ -62,6 +62,9 @@ function renderResults(payload) {
           : 'Heuristic assessment';
     const card = document.createElement('article');
     card.className = 'result-card';
+    const whyThisFits = (course.matchReasons || [])
+      .map((reason) => `<li>${reason}</li>`)
+      .join('');
     card.innerHTML = `
       <div class="match-badge">Match score ${course.matchScore}</div>
       <h3>${course.name}</h3>
@@ -72,9 +75,10 @@ function renderResults(payload) {
         <span>${modeLabel}</span>
       </div>
       <p>${course.description || 'No description available yet.'}</p>
-      <div class="result-meta">
-        ${(course.matchReasons || []).map((reason) => `<span>${reason}</span>`).join('')}
-      </div>
+      <section class="match-explainer">
+        <strong>Why this suits you</strong>
+        <ul>${whyThisFits}</ul>
+      </section>
     `;
     results.appendChild(card);
   });

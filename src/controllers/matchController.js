@@ -28,6 +28,90 @@ function calculateAverage(scores = {}) {
   return numeric.reduce((sum, entry) => sum + entry.value, 0) / numeric.length;
 }
 
+function scoreEntries(scores = {}) {
+  return Object.entries(scores)
+    .map(([subject, value]) => ({
+      subject,
+      canonical: canonicalSubject(subject),
+      value: Number(value),
+    }))
+    .filter((entry) => Number.isFinite(entry.value));
+}
+
+function buildSubjectAlignment(scores = {}, subjectNames = []) {
+  const studentScores = scoreEntries(scores);
+  const targets = Array.isArray(subjectNames) ? subjectNames.filter(Boolean) : [];
+  const matches = targets
+    .map((subject) => findSubjectMatch(studentScores, subject))
+    .filter(Boolean);
+  const average = matches.length ? matches.reduce((sum, entry) => sum + entry.value, 0) / matches.length : null;
+  const coverage = targets.length ? matches.length / targets.length : 0;
+
+  return {
+    matches,
+    average,
+    coverage,
+  };
+}
+
+function buildSubjectFirstScore(scores = {}, subjectNames = [], fallbackScore = 50) {
+  const alignment = buildSubjectAlignment(scores, subjectNames);
+  if (!subjectNames.length) {
+    return {
+      score: Math.round(fallbackScore),
+      alignment,
+    };
+  }
+
+  const score = Math.round(
+    Math.max(
+      0,
+      Math.min(100, alignment.coverage * 70 + (alignment.average === null ? 0 : alignment.average * 0.3))
+    )
+  );
+
+  return {
+    score,
+    alignment,
+  };
+}
+
+function summarizeText(value = '', maxLength = 160) {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  if (!text) {
+    return null;
+  }
+
+  const sentence = text.match(/(.+?[.!?])(?:\s|$)/);
+  const summary = sentence ? sentence[1] : text;
+  return summary.length > maxLength ? `${summary.slice(0, maxLength - 1).trim()}…` : summary;
+}
+
+function buildSuitabilityNarrative(course, subjectNames = [], scores = {}) {
+  const reasons = [];
+  const subjectAlignment = buildSubjectAlignment(scores, subjectNames);
+
+  if (subjectAlignment.matches.length) {
+    reasons.push(
+      `Your taken subjects align directly: ${subjectAlignment.matches
+        .map((entry) => `${entry.subject} (${entry.value})`)
+        .join(', ')}.`
+    );
+  }
+
+  const requirementSummary = summarizeText(course.entryRequirements);
+  if (requirementSummary) {
+    reasons.push(`Entry requirements considered: ${requirementSummary}`);
+  }
+
+  const descriptionSummary = summarizeText(course.description);
+  if (descriptionSummary) {
+    reasons.push(`Course focus from the description: ${descriptionSummary}`);
+  }
+
+  return reasons;
+}
+
 function hasStructuredRequirements(course) {
   const reqs = course.requirements || {};
   return Boolean(
@@ -98,6 +182,7 @@ function buildRequirementMatch(course, scores = {}, requirements = {}) {
   }
 
   const requiredSubjects = parseRequiredSubjects(reqs);
+  const requiredSubjectNames = requiredSubjects.map((subject) => subject.name);
   if (requiredSubjects.length) {
     const matchedSubjects = [];
     const missingSubjects = [];
@@ -131,19 +216,27 @@ function buildRequirementMatch(course, scores = {}, requirements = {}) {
     reasons.push(`Required subjects provided: ${matchedSubjects.join(', ')}`);
   }
 
-  let matchScore = average !== null ? Math.round(average) : 50;
+  const subjectFirst = buildSubjectFirstScore(
+    scores,
+    requiredSubjectNames,
+    average !== null ? average : 50
+  );
+  let matchScore = subjectFirst.score;
   if (requirements.preferredFaculty) {
-    matchScore += 10;
+    matchScore += 5;
   }
   if (Array.isArray(requirements.preferredUniversityIds) && requirements.preferredUniversityIds.length) {
-    matchScore += 10;
+    matchScore += 5;
   }
+
+  reasons.push(...buildSuitabilityNarrative(course, requiredSubjectNames, scores));
 
   return {
     ...course.toJSON(),
-    matchScore,
+    matchScore: Math.min(100, matchScore),
     matchReasons: reasons,
     studentAverageScore: average,
+    subjectPriorityScore: subjectFirst.score,
     matchMode: 'requirements',
   };
 }
@@ -199,15 +292,37 @@ async function findMatches(scores = {}, requirements = {}) {
 
       return {
         ...candidate.course.toJSON(),
-        matchScore: assessment.score,
+        matchScore: Math.round(
+          buildSubjectFirstScore(
+            scores,
+            assessment.recommendedSubjects && assessment.recommendedSubjects.length
+              ? assessment.recommendedSubjects
+              : assessment.matchedSubjects,
+            assessment.score
+          ).score * 0.75 + assessment.score * 0.25
+        ),
         matchReasons: [
           ...candidate.filteredReasons,
           ...assessment.reasons,
+          ...buildSuitabilityNarrative(
+            candidate.course,
+            assessment.recommendedSubjects && assessment.recommendedSubjects.length
+              ? assessment.recommendedSubjects
+              : assessment.matchedSubjects,
+            scores
+          ),
           ...(assessment.recommendedSubjects.length
             ? [`Recommended subjects: ${assessment.recommendedSubjects.join(', ')}`]
             : []),
         ],
         studentAverageScore: calculateAverage(scores),
+        subjectPriorityScore: buildSubjectFirstScore(
+          scores,
+          assessment.recommendedSubjects && assessment.recommendedSubjects.length
+            ? assessment.recommendedSubjects
+            : assessment.matchedSubjects,
+          assessment.score
+        ).score,
         matchMode: assessment.source,
         aiAssessment: {
           source: assessment.source,
@@ -221,7 +336,10 @@ async function findMatches(scores = {}, requirements = {}) {
   );
 
   return [...directMatches, ...softMatches.filter(Boolean)].sort(
-    (a, b) => b.matchScore - a.matchScore || a.name.localeCompare(b.name)
+    (a, b) =>
+      (b.subjectPriorityScore || 0) - (a.subjectPriorityScore || 0) ||
+      b.matchScore - a.matchScore ||
+      a.name.localeCompare(b.name)
   );
 }
 

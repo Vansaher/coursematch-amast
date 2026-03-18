@@ -167,6 +167,17 @@ function extractCourseText(course) {
   );
 }
 
+function summarizeText(value = '', maxLength = 160) {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  if (!text) {
+    return null;
+  }
+
+  const sentence = text.match(/(.+?[.!?])(?:\s|$)/);
+  const summary = sentence ? sentence[1] : text;
+  return summary.length > maxLength ? `${summary.slice(0, maxLength - 1).trim()}...` : summary;
+}
+
 function inferCourseProfile(course) {
   const courseText = extractCourseText(course);
   return COURSE_PROFILES.find((profile) =>
@@ -240,6 +251,12 @@ function buildHeuristicAssessment(course, scores = {}) {
   }
   if (relevantAverage !== null) {
     reasons.push(`Average across matched subjects is ${relevantAverage.toFixed(2)}.`);
+  }
+  if (course.entryRequirements) {
+    reasons.push(`Entry requirements considered: ${summarizeText(course.entryRequirements)}.`);
+  }
+  if (course.description) {
+    reasons.push(`Course description considered: ${summarizeText(course.description)}.`);
   }
 
   return {
@@ -376,7 +393,7 @@ async function assessCourseWithQwen(course, scores = {}, heuristicAssessment) {
           {
             role: 'system',
             content:
-              'You assess whether a student subject-score profile is academically suitable for a university course in Malaysia. Be conservative. Use the course text first. If explicit entry requirements are absent, infer suitability from recommended STPM/related subject combinations. Return JSON only.',
+              'You assess whether a student subject-score profile is academically suitable for a university course in Malaysia. Be conservative. Rank subject relevance first. Use the course description and entry requirements when available to explain why the course suits or does not suit the student. If explicit entry requirements are absent, infer suitability from recommended STPM-related subject combinations. Return JSON only.',
           },
           {
             role: 'user',
