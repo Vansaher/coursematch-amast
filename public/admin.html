@@ -28,25 +28,27 @@
           <a class="admin-nav-item active" href="/admin">Dashboard</a>
           <a class="admin-nav-item" href="/admin/imports">Imports</a>
           <a class="admin-nav-item" href="/admin/catalog">Catalog</a>
-          <a class="admin-nav-item" href="/user">User portal</a>
         </nav>
 
-        <div class="admin-sidebar-footer">
-          <button id="logout-button" class="secondary-button sidebar-button" type="button">
-            Log out
-          </button>
-        </div>
       </aside>
 
       <main class="admin-main">
         <header class="admin-topbar">
           <div class="admin-toolbar-spacer"></div>
-          <div class="admin-toolbar-user">
-            <div class="admin-toolbar-dot"></div>
-            <div class="admin-avatar">A</div>
-            <div class="admin-user-copy">
-              <strong>Admin</strong>
-              <span>Authenticated</span>
+          <div class="admin-toolbar-actions">
+            <a class="secondary-button" href="/user">User portal</a>
+            <div class="admin-user-menu">
+              <div class="admin-toolbar-user">
+                <div class="admin-toolbar-dot"></div>
+                <div class="admin-avatar">A</div>
+                <div class="admin-user-copy">
+                  <strong>Admin</strong>
+                  <span>Authenticated</span>
+                </div>
+              </div>
+              <div class="admin-user-dropdown">
+                <button id="logout-button" class="secondary-button" type="button">Log out</button>
+              </div>
             </div>
           </div>
         </header>

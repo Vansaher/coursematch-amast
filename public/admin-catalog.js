@@ -2,6 +2,8 @@ const logoutButton = document.getElementById('logout-button');
 const universitySelect = document.getElementById('catalog-university-select');
 const catalogStatus = document.getElementById('catalog-status');
 const catalogGroups = document.getElementById('catalog-groups');
+const adminUserMenu = document.querySelector('.admin-user-menu');
+const adminToolbarUser = document.querySelector('.admin-toolbar-user');
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -20,6 +22,17 @@ async function fetchJson(url, options = {}) {
   }
   return payload;
 }
+
+adminToolbarUser?.addEventListener('click', (event) => {
+  event.stopPropagation();
+  adminUserMenu?.classList.toggle('open');
+});
+
+document.addEventListener('click', (event) => {
+  if (adminUserMenu && !adminUserMenu.contains(event.target)) {
+    adminUserMenu.classList.remove('open');
+  }
+});
 
 function groupByFaculty(courses) {
   return courses.reduce((groups, course) => {

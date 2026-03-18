@@ -6,6 +6,8 @@ const statUniversities = document.getElementById('stat-universities');
 const statCourses = document.getElementById('stat-courses');
 const statFiltered = document.getElementById('stat-filtered');
 const statMatching = document.getElementById('stat-matching');
+const adminUserMenu = document.querySelector('.admin-user-menu');
+const adminToolbarUser = document.querySelector('.admin-toolbar-user');
 
 let activeUniversityId = '';
 
@@ -17,6 +19,17 @@ async function fetchJson(url, options = {}) {
   }
   return payload;
 }
+
+adminToolbarUser?.addEventListener('click', (event) => {
+  event.stopPropagation();
+  adminUserMenu?.classList.toggle('open');
+});
+
+document.addEventListener('click', (event) => {
+  if (adminUserMenu && !adminUserMenu.contains(event.target)) {
+    adminUserMenu.classList.remove('open');
+  }
+});
 
 logoutButton.addEventListener('click', async () => {
   try {

@@ -10,6 +10,8 @@ const selectAllImportsButton = document.getElementById('select-all-imports');
 const clearAllImportsButton = document.getElementById('clear-all-imports');
 const applySelectedImportsButton = document.getElementById('apply-selected-imports');
 const useQwenDefaultSwitch = document.getElementById('use-qwen-default');
+const adminUserMenu = document.querySelector('.admin-user-menu');
+const adminToolbarUser = document.querySelector('.admin-toolbar-user');
 
 let currentPreview = null;
 let activeJobPoll = null;
@@ -45,6 +47,17 @@ async function fetchJson(url, options = {}) {
   return payload;
 }
 
+adminToolbarUser?.addEventListener('click', (event) => {
+  event.stopPropagation();
+  adminUserMenu?.classList.toggle('open');
+});
+
+document.addEventListener('click', (event) => {
+  if (adminUserMenu && !adminUserMenu.contains(event.target)) {
+    adminUserMenu.classList.remove('open');
+  }
+});
+
 logoutButton.addEventListener('click', async () => {
   try {
     await fetchJson('/api/admin/logout', { method: 'POST' });
@@ -61,6 +74,27 @@ function setProgress(value, label) {
 function progressFromJob(job) {
   if (typeof job.progress === 'number') {
     return job.progress;
+  }
+
+  const stage = String(job.stage || '');
+  const counters = job.counters || {};
+  const totalUrls = Number(counters.totalUrls || 0);
+  const processedUrls = Number(counters.processedUrls || 0);
+  const totalCourses = Number(counters.totalCourses || 0);
+  const preparedCourses = Number(counters.preparedCourses || 0);
+  const totalCoursesToWrite = Number(counters.totalCoursesToWrite || 0);
+  const writtenCourses = Number(counters.writtenCourses || 0);
+
+  if (stage === 'preparing_courses' && totalCourses > 0) {
+    return Math.min(74, 20 + Math.round((preparedCourses / totalCourses) * 54));
+  }
+
+  if ((stage === 'writing_database' || stage === 'previewing' || stage === 'comparing') && totalCoursesToWrite > 0) {
+    return Math.min(95, 75 + Math.round((writtenCourses / totalCoursesToWrite) * 20));
+  }
+
+  if ((stage === 'previewing' || stage === 'comparing') && totalCourses > 0) {
+    return Math.min(95, 75 + Math.round((preparedCourses / totalCourses) * 20));
   }
 
   const total = Number(job.counters?.totalUrls || 0);

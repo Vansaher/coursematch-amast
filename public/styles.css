@@ -676,6 +676,43 @@ button:hover {
   display: flex;
   align-items: center;
   gap: 14px;
+  cursor: pointer;
+}
+
+.admin-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.admin-user-menu {
+  position: relative;
+}
+
+.admin-user-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 140px;
+  padding: 10px;
+  border: 1px solid #dfe6ef;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 28px rgba(69, 85, 112, 0.12);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.admin-user-dropdown .secondary-button {
+  width: 100%;
+}
+
+.admin-user-menu.open .admin-user-dropdown {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 .admin-toolbar-dot {
@@ -879,6 +916,21 @@ button:hover {
 .switch-stack {
   display: grid;
   gap: 12px;
+}
+
+.admin-inline-group {
+  border: 1px solid #dfe6ef;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.76);
+  padding: 14px 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.admin-inline-group summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #2a4d7f;
 }
 
 .toggle-switch {
@@ -1369,7 +1421,8 @@ button:hover {
   .landing-actions,
   .landing-buttons,
   .admin-topbar,
-  .admin-toolbar-user {
+  .admin-toolbar-user,
+  .admin-toolbar-actions {
     flex-direction: column;
     align-items: stretch;
   }
