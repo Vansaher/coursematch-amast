@@ -37,7 +37,7 @@ logoutButton.addEventListener('click', async () => {
       method: 'POST',
     });
   } finally {
-    window.location.href = '/admin/login';
+    window.location.href = '/account';
   }
 });
 

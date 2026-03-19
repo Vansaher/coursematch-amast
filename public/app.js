@@ -9,6 +9,7 @@ const rerunButton = document.getElementById('rerun-button');
 
 let universityOptions = [];
 let latestParsedSnapshot = null;
+let accountSession = null;
 
 function setRerunVisibility(isVisible) {
   if (!rerunButton) {
@@ -335,6 +336,40 @@ async function fetchJson(url, options = {}) {
   return payload;
 }
 
+async function loadAccountSession() {
+  try {
+    const payload = await fetchJson('/api/account/session');
+    accountSession = payload.user;
+  } catch (error) {
+    accountSession = null;
+  }
+}
+
+async function persistMatchSession(sessionType, payload) {
+  if (!accountSession) {
+    return;
+  }
+
+  await fetchJson('/api/account/match-sessions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      label: `${sessionType === 'what_if' ? 'What-if' : 'STPM upload'} ${new Date().toLocaleString()}`,
+      sessionType,
+      inputSnapshot: payload.input,
+      resultsSnapshot: payload.matches.slice(0, 8).map((course) => ({
+        id: course.id,
+        name: course.name,
+        university: course.university?.name || null,
+        matchScore: course.matchScore,
+        eligibility: course.eligibility || null,
+      })),
+    }),
+  });
+}
+
 function renderUniversityOptions(universities) {
   preferredUniversities.innerHTML = '';
 
@@ -379,6 +414,7 @@ async function submitPdfMatch() {
   };
   setRerunVisibility(true);
   renderResults(payload);
+  await persistMatchSession('upload', payload);
   formStatus.textContent = 'Done';
 }
 
@@ -401,14 +437,16 @@ async function rerunWhatIf() {
     }),
   });
 
-  renderResults({
+  const mergedPayload = {
     input: {
       ...payload.input,
       student: latestParsedSnapshot.student,
       subjects: latestParsedSnapshot.subjects,
     },
     matches: payload.matches,
-  });
+  };
+  renderResults(mergedPayload);
+  await persistMatchSession('what_if', mergedPayload);
   formStatus.textContent = 'What-if results updated';
 }
 
@@ -432,6 +470,6 @@ rerunButton?.addEventListener('click', async () => {
 
 setRerunVisibility(false);
 renderExtractedSubjects([]);
-loadUniversities().catch((error) => {
+Promise.all([loadAccountSession(), loadUniversities()]).catch((error) => {
   formStatus.textContent = error.message;
 });

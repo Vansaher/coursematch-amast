@@ -9,9 +9,12 @@ const catalogChatCourse = document.getElementById('catalog-chat-course');
 const catalogChatQuestion = document.getElementById('catalog-chat-question');
 const catalogChatSubmit = document.getElementById('catalog-chat-submit');
 const catalogChatAnswer = document.getElementById('catalog-chat-answer');
+const catalogDraftContent = document.getElementById('catalog-draft-content');
+const catalogDraftSave = document.getElementById('catalog-draft-save');
 const exportSavedButton = document.getElementById('catalog-export-saved');
 const clearSavedButton = document.getElementById('catalog-clear-saved');
 const exportCompareButton = document.getElementById('catalog-export-compare');
+const saveCompareButton = document.getElementById('catalog-save-compare');
 
 const filterInputs = {
   search: document.getElementById('catalog-search'),
@@ -29,6 +32,7 @@ let allCourses = [];
 let compareIds = [];
 let savedIds = [];
 let selectedChatCourseId = null;
+let accountSession = null;
 
 function escapeHtml(value = '') {
   return String(value)
@@ -195,6 +199,12 @@ function renderChatPanel() {
   catalogChatCourse.innerHTML = course
     ? `<strong>${escapeHtml(course.name)}</strong><br />${escapeHtml(course.university?.name || 'Unknown university')}`
     : 'Select a course first to ask questions.';
+  if (catalogDraftContent) {
+    catalogDraftContent.disabled = !accountSession || !course;
+  }
+  if (catalogDraftSave) {
+    catalogDraftSave.disabled = !accountSession || !course;
+  }
 }
 
 function renderSelectionStatus(visibleCount) {
@@ -327,6 +337,74 @@ async function loadCoursesForUniversity(universityId) {
   }
 }
 
+async function loadAccountSession() {
+  try {
+    const session = await fetchJson('/api/account/session');
+    accountSession = session.user;
+    const saved = await fetchJson('/api/account/saved-courses');
+    savedIds = saved.map((item) => String(item.courseId));
+  } catch (error) {
+    accountSession = null;
+    savedIds = loadSavedIds();
+  }
+}
+
+async function syncSavedCourse(courseId) {
+  if (!accountSession) {
+    toggleSaved(courseId);
+    return;
+  }
+
+  const id = String(courseId);
+  if (savedIds.includes(id)) {
+    await fetchJson(`/api/account/saved-courses/${id}`, { method: 'DELETE' });
+    savedIds = savedIds.filter((item) => item !== id);
+  } else {
+    await fetchJson('/api/account/saved-courses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ courseId: id }),
+    });
+    savedIds = [...savedIds, id];
+  }
+  renderCatalog();
+}
+
+async function saveComparisonHistory() {
+  if (!accountSession) {
+    catalogStatus.textContent = 'Log in to save comparison history';
+    return;
+  }
+  if (!compareIds.length) {
+    catalogStatus.textContent = 'Select courses first';
+    return;
+  }
+
+  await fetchJson('/api/account/comparisons', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title: `Comparison ${new Date().toLocaleString()}`,
+      courseIds: compareIds,
+    }),
+  });
+  catalogStatus.textContent = 'Comparison saved to your account history';
+}
+
+async function loadDraft(courseId) {
+  if (!accountSession || !courseId) {
+    if (catalogDraftContent) catalogDraftContent.value = '';
+    return;
+  }
+
+  try {
+    const draft = await fetchJson(`/api/account/drafts/${courseId}`);
+    catalogDraftContent.value = draft.content || '';
+  } catch (error) {
+    catalogDraftContent.value = '';
+  }
+}
+
 function exportCardsToPrint(title, courses) {
   if (!courses.length) {
     catalogStatus.textContent = 'Nothing selected to export';
@@ -388,10 +466,13 @@ catalogGroups.addEventListener('click', (event) => {
     toggleCompare(courseId);
   }
   if (action === 'save') {
-    toggleSaved(courseId);
+    syncSavedCourse(courseId).catch((error) => {
+      catalogStatus.textContent = error.message;
+    });
   }
   if (action === 'chat') {
     selectChatCourse(courseId);
+    loadDraft(courseId).catch(() => {});
   }
 });
 
@@ -440,9 +521,18 @@ exportSavedButton?.addEventListener('click', () => {
 });
 
 clearSavedButton?.addEventListener('click', () => {
-  savedIds = [];
-  persistSavedIds();
-  renderCatalog();
+  const clear = async () => {
+    if (accountSession) {
+      await Promise.all(savedIds.map((id) => fetchJson(`/api/account/saved-courses/${id}`, { method: 'DELETE' })));
+    }
+    savedIds = [];
+    persistSavedIds();
+    renderCatalog();
+  };
+
+  clear().catch((error) => {
+    catalogStatus.textContent = error.message;
+  });
 });
 
 exportCompareButton?.addEventListener('click', () => {
@@ -452,8 +542,32 @@ exportCompareButton?.addEventListener('click', () => {
   );
 });
 
+saveCompareButton?.addEventListener('click', () => {
+  saveComparisonHistory().catch((error) => {
+    catalogStatus.textContent = error.message;
+  });
+});
+
+catalogDraftSave?.addEventListener('click', async () => {
+  if (!accountSession || !selectedChatCourseId) {
+    catalogStatus.textContent = 'Log in and select a course first';
+    return;
+  }
+
+  try {
+    await fetchJson(`/api/account/drafts/${selectedChatCourseId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: catalogDraftContent.value }),
+    });
+    catalogStatus.textContent = 'Draft saved to your account';
+  } catch (error) {
+    catalogStatus.textContent = error.message;
+  }
+});
+
 savedIds = loadSavedIds();
-loadUniversities()
+Promise.all([loadAccountSession(), loadUniversities()])
   .then(() => {
     catalogGroups.innerHTML =
       '<div class="summary-placeholder">Select a university to view grouped courses.</div>';

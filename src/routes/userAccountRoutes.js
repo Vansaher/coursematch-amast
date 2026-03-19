@@ -24,6 +24,7 @@ router.post('/planner', requireUserApi, controller.createPlannerItem);
 router.put('/planner/:id', requireUserApi, controller.updatePlannerItem);
 router.delete('/planner/:id', requireUserApi, controller.deletePlannerItem);
 
+router.get('/drafts', requireUserApi, controller.getDrafts);
 router.get('/drafts/:courseId', requireUserApi, controller.getDraft);
 router.put('/drafts/:courseId', requireUserApi, controller.upsertDraft);
 

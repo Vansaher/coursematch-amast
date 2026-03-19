@@ -28,6 +28,7 @@ const courseInclude = [
 function safeUser(user) {
   return {
     id: user.id,
+    username: user.username,
     name: user.name,
     email: user.email,
     preferences: user.preferences || {},
@@ -37,18 +38,29 @@ function safeUser(user) {
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: 'Name, email, and password are required' });
+    const username = String(req.body.username || '').trim();
+    const name = String(req.body.name || '').trim();
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const password = String(req.body.password || '');
+
+    if (!username || !name || !email || !password) {
+      return res.status(400).json({ error: 'Username, name, email, and password are required' });
     }
 
-    const existing = await UserAccount.findOne({ where: { email } });
+    const existing = await UserAccount.findOne({
+      where: {
+        [Op.or]: [{ email }, { username }],
+      },
+    });
     if (existing) {
-      return res.status(409).json({ error: 'Email is already registered' });
+      return res.status(409).json({
+        error: existing.email === email ? 'Email is already registered' : 'Username is already taken',
+      });
     }
 
     const { hash, salt } = hashPassword(password);
     const user = await UserAccount.create({
+      username,
       name,
       email,
       passwordHash: hash,
@@ -70,10 +82,16 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await UserAccount.findOne({ where: { email } });
+    const username = String(req.body.username || '').trim();
+    const password = String(req.body.password || '');
+
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    const user = await UserAccount.findOne({ where: { username } });
     if (!user || !verifyPassword(password, user.passwordHash, user.passwordSalt)) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return res.status(401).json({ error: 'Invalid username or password' });
     }
 
     user.lastLoginAt = new Date();
@@ -231,6 +249,15 @@ exports.getDraft = async (req, res) => {
     },
   });
   res.json(row || { content: '' });
+};
+
+exports.getDrafts = async (req, res) => {
+  const rows = await UserCourseDraft.findAll({
+    where: { userId: req.userAccount.id },
+    include: [{ model: Course, as: 'course', include: [{ model: University, as: 'university' }] }],
+    order: [['updated_at', 'DESC']],
+  });
+  res.json(rows);
 };
 
 exports.upsertDraft = async (req, res) => {

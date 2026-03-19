@@ -27,46 +27,53 @@
           <nav class="admin-nav topbar-nav">
             <a class="admin-nav-item" href="/user">Course Matcher</a>
             <a class="admin-nav-item" href="/user/catalog">Course Catalog</a>
-            <a class="admin-nav-item active" href="/account">Account</a>
+            <a class="admin-nav-item active account-nav-item" href="/account">Account</a>
           </nav>
         </header>
 
-        <section class="hero-card user-hero-banner">
-          <p class="eyebrow">Optional Account</p>
-          <h1>Sign in only if you want persistence and planning tools.</h1>
-          <p class="lede">
-            You can still use matching and browsing without an account. Sign in if you want saved
-            shortlists, comparison history, match history, planner tracking, drafts, and alerts.
-          </p>
-        </section>
+        <section class="account-hero-shell hero-card user-hero-banner">
+          <div class="account-hero-copy">
+            <p class="eyebrow">Account</p>
+            <h1>Sign in for additional features</h1>
+            <p class="lede">
+              You can still use matching and browsing without an account. Sign in if you want saved
+              shortlists, comparison history, match history, planner tracking, drafts, and alerts.
+            </p>
+          </div>
 
-        <section class="panel-grid account-grid">
-          <section class="panel">
+          <section class="panel account-auth-panel">
             <div class="panel-heading">
-              <h2>Create Account</h2>
-              <p>Use this only for optional saved features.</p>
+              <p id="auth-mode-eyebrow" class="eyebrow">Account Login</p>
+              <h2 id="auth-mode-title">Log In</h2>
+              <p id="auth-mode-copy">Access saved shortlist, history, planner, drafts, and alerts.</p>
             </div>
-            <form id="register-form" class="stack-form">
-              <label>Name<input name="name" type="text" required /></label>
-              <label>Email<input name="email" type="email" required /></label>
-              <label>Password<input name="password" type="password" required /></label>
-              <button type="submit" class="primary-button">Register</button>
-            </form>
-          </section>
-
-          <section class="panel">
-            <div class="panel-heading">
-              <h2>Log In</h2>
-              <p>Access saved shortlist, history, planner, and alerts.</p>
-            </div>
-            <form id="login-form" class="stack-form">
-              <label>Email<input name="email" type="email" required /></label>
-              <label>Password<input name="password" type="password" required /></label>
+            <form id="account-auth-form" class="stack-form">
+              <label id="auth-name-label" hidden>
+                Name
+                <input id="auth-name-input" name="name" type="text" />
+              </label>
+              <label id="auth-email-label" hidden>
+                Email
+                <input id="auth-email-input" name="email" type="email" />
+              </label>
+              <label id="auth-username-label">
+                Username
+                <input id="auth-username-input" name="username" type="text" required />
+              </label>
+              <label>
+                Password
+                <input id="auth-password-input" name="password" type="password" required />
+              </label>
               <div class="form-actions">
-                <button type="submit" class="primary-button">Log in</button>
+                <button id="auth-submit-button" type="submit" class="primary-button">Log in</button>
                 <button id="logout-button" type="button" class="secondary-button">Log out</button>
               </div>
             </form>
+            <div class="account-auth-links">
+              <button id="show-register-mode" type="button" class="ghost-link-button">Create an Account</button>
+              <button id="show-admin-mode" type="button" class="ghost-link-button">Admin Log In</button>
+              <button id="show-login-mode" type="button" class="ghost-link-button" hidden>Back to User Log In</button>
+            </div>
             <div id="account-status" class="status-text"></div>
           </section>
         </section>
@@ -93,6 +100,10 @@
             <section class="summary-placeholder">
               <strong>Notifications / alerts</strong>
               <div id="account-alerts" class="account-list"></div>
+            </section>
+            <section class="summary-placeholder">
+              <strong>Personal statement drafts</strong>
+              <div id="account-drafts" class="account-list"></div>
             </section>
           </div>
 

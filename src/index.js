@@ -62,7 +62,7 @@ app.get('/admin/login', (req, res) => {
   if (session) {
     return res.redirect('/admin');
   }
-  res.sendFile(path.join(__dirname, '..', 'public', 'admin-login.html'));
+  return res.redirect('/account');
 });
 
 // connect to database using Sequelize

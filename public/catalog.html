@@ -27,11 +27,8 @@
           <nav class="admin-nav topbar-nav">
             <a class="admin-nav-item" href="/user">Course Matcher</a>
             <a class="admin-nav-item active" href="/user/catalog">Course Catalog</a>
+            <a class="admin-nav-item account-nav-item" href="/account">Account</a>
           </nav>
-          <div class="admin-toolbar-actions topbar-actions">
-            <a class="secondary-button" href="/account">User account</a>
-            <a class="secondary-button" href="/admin/login">Admin login</a>
-          </div>
         </header>
 
         <section class="hero-card user-hero-banner">
@@ -125,7 +122,10 @@
                 <div id="catalog-compare-list" class="catalog-mini-list">
                   <div class="summary-placeholder">No courses selected for comparison.</div>
                 </div>
-                <button id="catalog-export-compare" type="button" class="secondary-button">Export compare PDF</button>
+                <div class="catalog-top-actions">
+                  <button id="catalog-save-compare" type="button" class="secondary-button">Save comparison</button>
+                  <button id="catalog-export-compare" type="button" class="secondary-button">Export compare PDF</button>
+                </div>
                 <div id="catalog-compare-grid" class="catalog-compare-grid"></div>
               </section>
 
@@ -159,6 +159,11 @@
                 <div id="catalog-chat-answer" class="summary-placeholder">
                   The answer will appear here.
                 </div>
+                <label>
+                  Personal statement draft
+                  <textarea id="catalog-draft-content" rows="5" placeholder="Available when logged in. Draft why this course suits you."></textarea>
+                </label>
+                <button id="catalog-draft-save" type="button" class="secondary-button">Save draft</button>
               </section>
             </aside>
           </section>

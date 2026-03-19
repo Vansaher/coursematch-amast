@@ -84,7 +84,7 @@ function requireAdminApi(req, res, next) {
 function requireAdminPage(req, res, next) {
   const session = getSessionFromRequest(req);
   if (!session) {
-    return res.redirect('/admin/login');
+    return res.redirect('/account');
   }
 
   req.adminSession = session;

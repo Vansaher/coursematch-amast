@@ -232,7 +232,7 @@ logoutButton?.addEventListener('click', async () => {
   try {
     await fetchJson('/api/admin/logout', { method: 'POST' });
   } finally {
-    window.location.href = '/admin/login';
+    window.location.href = '/account';
   }
 });
 

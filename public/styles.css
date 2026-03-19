@@ -396,6 +396,10 @@ label {
   font-weight: 500;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 input,
 select,
 button,
@@ -712,12 +716,21 @@ button:hover {
   min-height: 42px;
   padding: 0 16px;
   border-radius: 999px;
-  background: rgba(17, 151, 229, 0.08);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
   color: #395069;
 }
 
 .topbar-nav .admin-nav-item.active {
+  background: transparent;
+  box-shadow: none;
+  color: #203246;
+}
+
+.topbar-nav .account-nav-item {
   background: linear-gradient(135deg, #ff7d4e, #fb5f4a);
+  color: #fff;
   box-shadow: 0 12px 24px rgba(239, 79, 85, 0.2);
 }
 
@@ -1453,6 +1466,73 @@ button:hover {
 .active-chat-course {
   border-color: rgba(251, 95, 74, 0.34);
   box-shadow: 0 18px 30px rgba(239, 79, 85, 0.08);
+}
+
+.account-grid,
+.account-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.account-auth-shell {
+  display: grid;
+  justify-content: start;
+  margin-top: 24px;
+}
+
+.account-auth-panel {
+  width: min(460px, 100%);
+}
+
+.account-hero-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.72fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.account-hero-copy {
+  max-width: 720px;
+}
+
+.account-dashboard-panel,
+.account-planner-panel,
+.account-career-panel {
+  margin-top: 24px;
+}
+
+.account-list {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.account-item,
+.account-group {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 16px;
+  background: #f8fbff;
+  border: 1px solid #e3ebf4;
+}
+
+.account-auth-links {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.ghost-link-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #cf4f42;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .admin-catalog-card {
@@ -2226,7 +2306,10 @@ button:hover {
   .admin-content-grid,
   .catalog-filter-grid,
   .catalog-side-by-side,
-  .catalog-detail-grid {
+  .catalog-detail-grid,
+  .account-grid,
+  .account-hero-shell,
+  .account-dashboard-grid {
     grid-template-columns: 1fr;
   }
 
