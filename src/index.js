@@ -32,6 +32,10 @@ app.get('/user', (req, res) => {
 });
 
 app.get('/catalog', (req, res) => {
+  res.redirect('/user/catalog');
+});
+
+app.get('/user/catalog', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'catalog.html'));
 });
 
@@ -72,7 +76,7 @@ sequelize
     return sequelize.sync(syncOptions);
   })
   .then(() => {
-    app.listen(port, () => console.log(`Server started on port ${port}`));
+    app.listen(port, () => console.log(`Server started at http://localhost:${port}`));
   })
   .catch((err) => {
     console.error('Failed to connect to database', err);

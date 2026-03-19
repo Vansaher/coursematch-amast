@@ -12,40 +12,37 @@
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body class="page-shell user-shell dashboard-style-shell">
+  <body class="page-shell user-shell dashboard-style-shell landing-home-shell app-topbar-shell">
     <div class="backdrop"></div>
-    <div class="admin-dashboard user-dashboard-shell">
-      <aside class="admin-sidebar">
-        <div class="admin-brand">
-          <div class="admin-brand-mark">A</div>
-          <div class="admin-brand-copy">
-            <strong>AMAST</strong>
-            <span>Course Matching</span>
-          </div>
-        </div>
-
-        <nav class="admin-nav">
-          <a class="admin-nav-item" href="/user">Course Matcher</a>
-          <a class="admin-nav-item active" href="/catalog">Course Catalog</a>
-        </nav>
-
-      </aside>
-
-      <main class="admin-main">
-        <header class="admin-topbar">
-          <div class="admin-toolbar-spacer"></div>
-          <div class="admin-toolbar-actions">
+    <div class="admin-dashboard user-dashboard-shell topbar-dashboard-shell">
+      <main class="admin-main topbar-main">
+        <header class="admin-topbar landing-app-topbar">
+          <a class="landing-home-brand" href="/">
+            <span class="landing-home-brand-mark">A</span>
+            <span class="landing-home-brand-copy">
+              <strong>AMAST Match</strong>
+              <span>Malaysian university course matching</span>
+            </span>
+          </a>
+          <nav class="admin-nav topbar-nav">
+            <a class="admin-nav-item" href="/user">Course Matcher</a>
+            <a class="admin-nav-item active" href="/user/catalog">Course Catalog</a>
+          </nav>
+          <div class="admin-toolbar-actions topbar-actions">
             <a class="secondary-button" href="/admin/login">Admin login</a>
           </div>
         </header>
 
         <section class="hero-card user-hero-banner">
           <p class="eyebrow">Course Catalogue</p>
-          <h1>Browse courses by university and faculty.</h1>
+          <h1>Browse Malaysian courses by university and faculty.</h1>
           <p class="lede">
-            Pick a university first, then expand faculty groups to view the available courses
-            in the catalogue.
+            Select a university, expand faculty groups, and review the programmes already loaded
+            into the catalogue before you run a match.
           </p>
+          <div class="hero-links">
+            <a class="secondary-button" href="/user">Back to matcher</a>
+          </div>
         </section>
 
         <section class="panel catalog-panel">

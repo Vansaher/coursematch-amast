@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Course Matching Platform</title>
+    <title>AMAST Match</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -12,48 +12,105 @@
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body class="page-shell landing-shell dashboard-style-shell">
+  <body class="page-shell dashboard-style-shell landing-home-shell">
     <div class="backdrop"></div>
-    <main class="layout landing-layout">
-      <section class="landing-nav dashboard-nav">
-        <div class="brand-mark">AMAST Match</div>
-        <div class="landing-actions">
-          <a class="ghost-link" href="/catalog">Course Catalog</a>
+    <main class="layout landing-home-layout">
+      <header class="landing-home-nav">
+        <a class="landing-home-brand" href="/">
+          <span class="landing-home-brand-mark">A</span>
+          <span class="landing-home-brand-copy">
+            <strong>AMAST Match</strong>
+            <span>Malaysian university course matching</span>
+          </span>
+        </a>
+
+        <nav class="landing-home-links">
+          <a class="ghost-link" href="/user/catalog">Course Catalog</a>
           <a class="ghost-link" href="/user">User Page</a>
           <a class="primary-button nav-button" href="/admin/login">Admin Log In</a>
+        </nav>
+      </header>
+
+      <section class="home-hero">
+        <div class="home-hero-media">
+          <div class="home-hero-image" id="hero-image"></div>
+          <div class="home-hero-overlay"></div>
+          <div class="home-hero-content">
+            <div class="home-hero-copy">
+              <p class="eyebrow">Welcome to AMAST Match</p>
+              <h1>Discover Your Education Path</h1>
+              <p class="home-hero-lede">
+                Explore courses, upload your results, and move from raw
+                grades to realistic degree options across leading Malaysian universities.
+              </p>
+              <div class="landing-buttons">
+                <a class="primary-button landing-button" href="/user">Start matching</a>
+                <a class="secondary-button landing-button" href="/user/catalog">Browse courses</a>
+              </div>
+            </div>
+
+            <aside class="home-hero-universities">
+              <div class="home-hero-universities-head">
+                <span>Featured universities</span>
+                <strong id="hero-university-name">Universiti Malaya</strong>
+              </div>
+              <p id="hero-university-copy" class="home-hero-universities-copy">
+                Rotating through the universities already listed inside the platform.
+              </p>
+              <div id="hero-university-list" class="home-hero-university-list"></div>
+            </aside>
+          </div>
+        </div>
+
+        <div class="home-feature-strip">
+          <article class="home-feature-card">
+            <span class="home-feature-kicker">STPM Upload</span>
+            <h2>Parse your result slip</h2>
+            <p>Upload the PDF once and let the platform extract subjects, grades, and score signals automatically.</p>
+          </article>
+          <article class="home-feature-card home-feature-card-accent">
+            <span class="home-feature-kicker">Course Matching</span>
+            <h2>Rank suitable courses</h2>
+            <p>See degree options ranked by subject fit, faculty preference, and structured requirement coverage.</p>
+          </article>
+          <article class="home-feature-card">
+            <span class="home-feature-kicker">Decision Support</span>
+            <h2>Understand why it fits</h2>
+            <p>Read plain-language explanations showing how your STPM combination aligns with each course.</p>
+          </article>
         </div>
       </section>
 
-      <section class="landing-stage dashboard-stage">
-        <article class="landing-visual dashboard-landing-visual">
-          <div class="landing-copy">
-            <p class="eyebrow">First Entry</p>
-            <h1>Step into your next university path.</h1>
-            <div class="landing-buttons">
-              <a class="secondary-button landing-button" href="/catalog">Browse catalog</a>
-              <a class="primary-button landing-button" href="/user">Enter as user</a>
-              <a class="secondary-button landing-button" href="/admin/login">Enter as admin</a>
+      <section class="home-story">
+        <div class="home-story-image-panel">
+          <img
+            src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=80"
+            alt="Student walking with books"
+          />
+        </div>
+        <div class="home-story-copy">
+          <p class="eyebrow">Your Next Step</p>
+          <h2>Start looking for your future.</h2>
+          <p>
+            Move from uncertainty to a shortlist you can act on. Use the user portal to upload
+            your STPM results, compare universities, and narrow your options before applications
+            open.
+          </p>
+          <div class="home-story-points">
+            <div>
+              <strong>Clearer choices</strong>
+              <span>See which degree pathways match what you already studied.</span>
+            </div>
+            <div>
+              <strong>Faster filtering</strong>
+              <span>Focus on universities and faculties that fit your direction.</span>
             </div>
           </div>
-          <div class="landing-panel dashboard-side-cards">
-            <div class="landing-panel-card">
-              <span class="landing-stat-label">Students</span>
-              <strong>Manual score entry</strong>
-              <p>Open access for applicants exploring suitable courses.</p>
-            </div>
-            <div class="landing-panel-card">
-              <span class="landing-stat-label">Admins</span>
-              <strong>Protected console</strong>
-              <p>Authenticate before running imports or changing catalogue data.</p>
-            </div>
-            <div class="landing-panel-card accent-card">
-              <span class="landing-stat-label">Catalogues</span>
-              <strong>Malaysia-first dataset</strong>
-              <p>Designed for course matching, admissions context, and future AI enrichment.</p>
-            </div>
-          </div>
-        </article>
+          <a class="primary-button landing-button" href="/user">Go to user page</a>
+        </div>
       </section>
     </main>
+
+    <script src="/landing.js"></script>
   </body>
 </html>

@@ -4,6 +4,48 @@ const QWEN_ENDPOINT =
 const QWEN_MODEL = process.env.QWEN_MODEL || 'qwen-plus';
 const QWEN_TIMEOUT_MS = Number(process.env.QWEN_TIMEOUT_MS || 12000);
 const QWEN_MAX_CANDIDATES = Number(process.env.QWEN_MAX_CANDIDATES || 6);
+const INTEREST_STOPWORDS = new Set([
+  'a',
+  'about',
+  'an',
+  'and',
+  'are',
+  'as',
+  'at',
+  'be',
+  'been',
+  'but',
+  'by',
+  'do',
+  'for',
+  'from',
+  'i',
+  'if',
+  'in',
+  'into',
+  'is',
+  'it',
+  'its',
+  'like',
+  'maybe',
+  'my',
+  'of',
+  'on',
+  'or',
+  'same',
+  'something',
+  'that',
+  'the',
+  'their',
+  'them',
+  'there',
+  'they',
+  'this',
+  'to',
+  'up',
+  'want',
+  'with',
+]);
 
 const SUBJECT_ALIASES = {
   'bahasa melayu': 'malay language',
@@ -193,6 +235,75 @@ function average(values) {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
+function extractInterestKeywords(interestStatement = '') {
+  const tokens = normalizeText(interestStatement)
+    .split(' ')
+    .filter((token) => token.length >= 3 && !INTEREST_STOPWORDS.has(token));
+  return [...new Set(tokens)].slice(0, 12);
+}
+
+function buildHeuristicInterestProfile(interestStatement = '') {
+  const text = String(interestStatement || '').trim();
+  if (!text) {
+    return null;
+  }
+
+  const keywords = extractInterestKeywords(text);
+  return {
+    summary: text.length > 220 ? `${text.slice(0, 219).trim()}...` : text,
+    preferredCourseAreas: keywords.slice(0, 4),
+    relatedKeywords: keywords,
+    avoidCareerNotes: [],
+    source: 'heuristic',
+    model: null,
+  };
+}
+
+function buildInterestAssessment(course, interestProfile) {
+  if (!interestProfile) {
+    return {
+      score: null,
+      reasons: [],
+      matchedKeywords: [],
+      matchedAreas: [],
+    };
+  }
+
+  const courseText = extractCourseText(course);
+  const matchedAreas = (interestProfile.preferredCourseAreas || []).filter((area) =>
+    normalizeText(area)
+      .split(' ')
+      .every((part) => part && courseText.includes(part))
+  );
+  const matchedKeywords = (interestProfile.relatedKeywords || []).filter((keyword) => courseText.includes(normalizeText(keyword)));
+  const score = Math.round(
+    Math.max(
+      28,
+      Math.min(96, 30 + matchedAreas.length * 18 + Math.min(4, matchedKeywords.length) * 10)
+    )
+  );
+  const reasons = [];
+
+  if (matchedAreas.length || matchedKeywords.length) {
+    reasons.push(
+      `Interest alignment from your note: ${[...matchedAreas, ...matchedKeywords].slice(0, 5).join(', ')}.`
+    );
+  } else {
+    reasons.push('Your interest note was considered, but this course shows only a weak topic overlap.');
+  }
+
+  if (interestProfile.summary) {
+    reasons.push(`Interest summary considered: ${interestProfile.summary}`);
+  }
+
+  return {
+    score,
+    reasons,
+    matchedKeywords,
+    matchedAreas,
+  };
+}
+
 function buildHeuristicAssessment(course, scores = {}) {
   const studentScores = scoreEntries(scores);
   const profile = inferCourseProfile(course);
@@ -297,7 +408,82 @@ function parseJsonResponse(text) {
   return JSON.parse(candidate);
 }
 
-async function assessCourseWithQwen(course, scores = {}, heuristicAssessment) {
+async function buildInterestProfile(interestStatement = '') {
+  const heuristicProfile = buildHeuristicInterestProfile(interestStatement);
+  if (!heuristicProfile || !isQwenConfigured()) {
+    return heuristicProfile;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), QWEN_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(QWEN_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.QWEN_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: QWEN_MODEL,
+        temperature: 0.1,
+        max_tokens: 250,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You normalize a student interest statement into course-selection guidance for Malaysian university applications. Return JSON only.',
+          },
+          {
+            role: 'user',
+            content: JSON.stringify({
+              interestStatement,
+              outputContract: {
+                summary: 'short string',
+                preferredCourseAreas: ['short strings'],
+                relatedKeywords: ['short strings'],
+                avoidCareerNotes: ['short strings'],
+              },
+            }),
+          },
+        ],
+      }),
+      signal: controller.signal,
+    });
+
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload?.error?.message || payload?.message || `Qwen request failed with ${response.status}`);
+    }
+
+    const parsed = parseJsonResponse(extractMessageContent(payload));
+    return {
+      summary: String(parsed?.summary || heuristicProfile.summary || ''),
+      preferredCourseAreas: Array.isArray(parsed?.preferredCourseAreas)
+        ? parsed.preferredCourseAreas.map((value) => String(value)).filter(Boolean).slice(0, 6)
+        : heuristicProfile.preferredCourseAreas,
+      relatedKeywords: Array.isArray(parsed?.relatedKeywords)
+        ? parsed.relatedKeywords.map((value) => String(value)).filter(Boolean).slice(0, 10)
+        : heuristicProfile.relatedKeywords,
+      avoidCareerNotes: Array.isArray(parsed?.avoidCareerNotes)
+        ? parsed.avoidCareerNotes.map((value) => String(value)).filter(Boolean).slice(0, 4)
+        : [],
+      source: 'qwen',
+      model: QWEN_MODEL,
+    };
+  } catch (error) {
+    return {
+      ...heuristicProfile,
+      summary: heuristicProfile.summary,
+      error: error.message,
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function assessCourseWithQwen(course, scores = {}, heuristicAssessment, interestProfile = null) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), QWEN_TIMEOUT_MS);
 
@@ -306,6 +492,14 @@ async function assessCourseWithQwen(course, scores = {}, heuristicAssessment) {
       subject: entry.subject,
       score: entry.value,
     })),
+    studentInterest: interestProfile
+      ? {
+          summary: interestProfile.summary,
+          preferredCourseAreas: interestProfile.preferredCourseAreas,
+          relatedKeywords: interestProfile.relatedKeywords,
+          avoidCareerNotes: interestProfile.avoidCareerNotes,
+        }
+      : null,
     course: {
       name: course.name,
       faculty: course.faculty,
@@ -429,14 +623,14 @@ async function assessCourseWithQwen(course, scores = {}, heuristicAssessment) {
   }
 }
 
-async function buildCourseAssessment(course, scores = {}) {
+async function buildCourseAssessment(course, scores = {}, options = {}) {
   const heuristicAssessment = buildHeuristicAssessment(course, scores);
   if (!isQwenConfigured()) {
     return heuristicAssessment;
   }
 
   try {
-    return await assessCourseWithQwen(course, scores, heuristicAssessment);
+    return await assessCourseWithQwen(course, scores, heuristicAssessment, options.interestProfile || null);
   } catch (error) {
     return {
       ...heuristicAssessment,
@@ -448,6 +642,9 @@ async function buildCourseAssessment(course, scores = {}) {
 module.exports = {
   buildHeuristicAssessment,
   buildCourseAssessment,
+  buildHeuristicInterestProfile,
+  buildInterestAssessment,
+  buildInterestProfile,
   canonicalSubject,
   findSubjectMatch,
   getQwenCandidateLimit,

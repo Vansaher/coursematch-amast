@@ -12,29 +12,23 @@
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body class="page-shell user-shell dashboard-style-shell">
+  <body class="page-shell user-shell dashboard-style-shell landing-home-shell app-topbar-shell">
     <div class="backdrop"></div>
-    <div class="admin-dashboard user-dashboard-shell">
-      <aside class="admin-sidebar">
-        <div class="admin-brand">
-          <div class="admin-brand-mark">A</div>
-          <div class="admin-brand-copy">
-            <strong>AMAST</strong>
-            <span>Course Matching</span>
-          </div>
-        </div>
-
-        <nav class="admin-nav">
-          <a class="admin-nav-item active" href="/user">Course Matcher</a>
-          <a class="admin-nav-item" href="/catalog">Course Catalog</a>
-        </nav>
-
-      </aside>
-
-      <main class="admin-main">
-        <header class="admin-topbar">
-          <div class="admin-toolbar-spacer"></div>
-          <div class="admin-toolbar-actions">
+    <div class="admin-dashboard user-dashboard-shell topbar-dashboard-shell">
+      <main class="admin-main topbar-main">
+        <header class="admin-topbar landing-app-topbar">
+          <a class="landing-home-brand" href="/">
+            <span class="landing-home-brand-mark">A</span>
+            <span class="landing-home-brand-copy">
+              <strong>AMAST Match</strong>
+              <span>Malaysian university course matching</span>
+            </span>
+          </a>
+          <nav class="admin-nav topbar-nav">
+            <a class="admin-nav-item active" href="/user">Course Matcher</a>
+            <a class="admin-nav-item" href="/user/catalog">Course Catalog</a>
+          </nav>
+          <div class="admin-toolbar-actions topbar-actions">
             <a class="secondary-button" href="/admin/login">Admin login</a>
           </div>
         </header>
@@ -51,12 +45,12 @@
             logically.
           </p>
           <div class="hero-links">
-            <a class="secondary-button" href="/catalog">Browse course catalog</a>
+            <a class="secondary-button" href="/user/catalog">Browse course catalog</a>
           </div>
         </section>
 
-        <section class="panel-grid user-dashboard-grid">
-          <form id="match-form" class="panel form-panel">
+        <section class="user-flow-stack">
+          <form id="match-form" class="panel form-panel full-width-form-panel">
             <div class="panel-heading">
               <h2>STPM PDF Upload</h2>
               <p>Upload the result slip once. Subject rows are extracted automatically from the PDF.</p>
@@ -77,6 +71,15 @@
               </label>
             </div>
 
+            <label>
+              Tell us about your interest
+              <textarea
+                name="interestStatement"
+                rows="5"
+                placeholder="Example: I'm interested in computer hardware like PCs and game consoles. I keep up with tech, but I may prefer a related field rather than making hardware my full-time job."
+              ></textarea>
+            </label>
+
             <div class="subject-block">
               <div class="subject-header">
                 <h3>Extracted subjects</h3>
@@ -90,7 +93,7 @@
             </div>
           </form>
 
-          <section class="panel summary-panel">
+          <section class="panel summary-panel stacked-results-panel">
             <div class="panel-heading">
               <h2>Result Summary</h2>
               <p>Top ranked courses appear below after the STPM PDF is parsed successfully.</p>
@@ -98,7 +101,7 @@
             <div id="summary" class="summary-placeholder">
               No STPM match has been run yet.
             </div>
-            <div id="results" class="result-list"></div>
+            <div id="results" class="result-list stacked-results-list"></div>
           </section>
         </section>
       </main>

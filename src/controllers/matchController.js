@@ -2,6 +2,8 @@ const { Student, Course, University, CourseModule } = require('../models');
 const { deriveUniversityAbbreviation } = require('../utils/universityAbbreviation');
 const {
   buildCourseAssessment,
+  buildInterestAssessment,
+  buildInterestProfile,
   buildHeuristicAssessment,
   canonicalSubject,
   findSubjectMatch,
@@ -165,7 +167,7 @@ function applyPreferenceFilters(course, requirements = {}) {
   return reasons;
 }
 
-function buildRequirementMatch(course, scores = {}, requirements = {}) {
+function buildRequirementMatch(course, scores = {}, requirements = {}, interestAssessment = null) {
   const reasons = applyPreferenceFilters(course, requirements);
   if (!reasons) {
     return null;
@@ -228,6 +230,10 @@ function buildRequirementMatch(course, scores = {}, requirements = {}) {
   if (Array.isArray(requirements.preferredUniversityIds) && requirements.preferredUniversityIds.length) {
     matchScore += 5;
   }
+  if (interestAssessment && interestAssessment.score !== null) {
+    matchScore = Math.round(matchScore * 0.78 + interestAssessment.score * 0.22);
+    reasons.push(...interestAssessment.reasons);
+  }
 
   reasons.push(...buildSuitabilityNarrative(course, requiredSubjectNames, scores));
 
@@ -242,6 +248,9 @@ function buildRequirementMatch(course, scores = {}, requirements = {}) {
 }
 
 async function findMatches(scores = {}, requirements = {}) {
+  const interestProfile = requirements.interestStatement
+    ? await buildInterestProfile(requirements.interestStatement)
+    : null;
   const courses = await Course.findAll({
     include: [
       { model: University, as: 'university' },
@@ -257,10 +266,21 @@ async function findMatches(scores = {}, requirements = {}) {
     if (!filteredReasons) {
       continue;
     }
+    const interestAssessment = buildInterestAssessment(course, interestProfile);
 
     if (hasStructuredRequirements(course)) {
-      const match = buildRequirementMatch(course, scores, requirements);
+      const match = buildRequirementMatch(course, scores, requirements, interestAssessment);
       if (match) {
+        if (interestProfile) {
+          match.aiAssessment = {
+            source: interestProfile.source,
+            profileLabel: 'Interest profile',
+            matchedSubjects: [],
+            recommendedSubjects: interestProfile.preferredCourseAreas || [],
+            model: interestProfile.model || null,
+            interestSummary: interestProfile.summary,
+          };
+        }
         directMatches.push(match);
       }
       continue;
@@ -271,39 +291,47 @@ async function findMatches(scores = {}, requirements = {}) {
       course,
       filteredReasons,
       heuristicAssessment,
+      interestAssessment,
+      combinedPreRank: interestAssessment.score === null
+        ? heuristicAssessment.score
+        : Math.round(heuristicAssessment.score * 0.72 + interestAssessment.score * 0.28),
     });
   }
 
   const qwenLimit = isQwenConfigured() ? getQwenCandidateLimit() : 0;
   const rankedCandidates = [...softCandidates].sort(
-    (a, b) => b.heuristicAssessment.score - a.heuristicAssessment.score || a.course.name.localeCompare(b.course.name)
+    (a, b) => b.combinedPreRank - a.combinedPreRank || a.course.name.localeCompare(b.course.name)
   );
   const qwenCandidateIds = new Set(rankedCandidates.slice(0, qwenLimit).map((candidate) => String(candidate.course.id)));
 
   const softMatches = await Promise.all(
     rankedCandidates.map(async (candidate) => {
       const assessment = qwenCandidateIds.has(String(candidate.course.id))
-        ? await buildCourseAssessment(candidate.course, scores)
+        ? await buildCourseAssessment(candidate.course, scores, { interestProfile })
         : candidate.heuristicAssessment;
 
       if (!assessment.applicable) {
         return null;
       }
 
+      const subjectPriorityScore = buildSubjectFirstScore(
+        scores,
+        assessment.recommendedSubjects && assessment.recommendedSubjects.length
+          ? assessment.recommendedSubjects
+          : assessment.matchedSubjects,
+        assessment.score
+      ).score;
+      const matchScore = candidate.interestAssessment.score === null
+        ? Math.round(subjectPriorityScore * 0.75 + assessment.score * 0.25)
+        : Math.round(subjectPriorityScore * 0.58 + assessment.score * 0.24 + candidate.interestAssessment.score * 0.18);
+
       return {
         ...candidate.course.toJSON(),
-        matchScore: Math.round(
-          buildSubjectFirstScore(
-            scores,
-            assessment.recommendedSubjects && assessment.recommendedSubjects.length
-              ? assessment.recommendedSubjects
-              : assessment.matchedSubjects,
-            assessment.score
-          ).score * 0.75 + assessment.score * 0.25
-        ),
+        matchScore,
         matchReasons: [
           ...candidate.filteredReasons,
           ...assessment.reasons,
+          ...candidate.interestAssessment.reasons,
           ...buildSuitabilityNarrative(
             candidate.course,
             assessment.recommendedSubjects && assessment.recommendedSubjects.length
@@ -316,13 +344,7 @@ async function findMatches(scores = {}, requirements = {}) {
             : []),
         ],
         studentAverageScore: calculateAverage(scores),
-        subjectPriorityScore: buildSubjectFirstScore(
-          scores,
-          assessment.recommendedSubjects && assessment.recommendedSubjects.length
-            ? assessment.recommendedSubjects
-            : assessment.matchedSubjects,
-          assessment.score
-        ).score,
+        subjectPriorityScore,
         matchMode: assessment.source,
         aiAssessment: {
           source: assessment.source,
@@ -330,6 +352,7 @@ async function findMatches(scores = {}, requirements = {}) {
           matchedSubjects: assessment.matchedSubjects,
           recommendedSubjects: assessment.recommendedSubjects,
           model: assessment.model || null,
+          interestSummary: interestProfile?.summary || null,
         },
       };
     })
@@ -393,6 +416,7 @@ exports.matchManualInput = async (req, res) => {
       input: {
         scores,
         requirements: resolvedRequirements,
+        interestStatement: resolvedRequirements.interestStatement || '',
         averageScore: calculateAverage(scores),
       },
       matches,
@@ -419,6 +443,7 @@ exports.matchStpmPdfUpload = async (req, res) => {
         scores: parsed.scores,
         subjects: parsed.subjects,
         requirements: resolvedRequirements,
+        interestStatement: resolvedRequirements.interestStatement || '',
         averageScore: calculateAverage(parsed.scores),
       },
       matches,
