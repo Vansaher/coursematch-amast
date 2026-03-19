@@ -1,6 +1,5 @@
 # AMAST Course Matching
-
-AMAST is a Node.js + Express web app for importing Malaysian university course catalogues, enriching course data with Alibaba Qwen, and matching uploaded STPM results against available courses.
+A Node.js + Express web app for importing Malaysian university course catalogues and matching uploaded results against available courses.
 
 ## What It Does
 
