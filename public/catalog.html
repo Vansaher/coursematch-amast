@@ -29,37 +29,139 @@
             <a class="admin-nav-item active" href="/user/catalog">Course Catalog</a>
           </nav>
           <div class="admin-toolbar-actions topbar-actions">
+            <a class="secondary-button" href="/account">User account</a>
             <a class="secondary-button" href="/admin/login">Admin login</a>
           </div>
         </header>
 
         <section class="hero-card user-hero-banner">
           <p class="eyebrow">Course Catalogue</p>
-          <h1>Browse Malaysian courses by university and faculty.</h1>
+          <h1>Explore, compare, save, and ask about Malaysian courses.</h1>
           <p class="lede">
-            Select a university, expand faculty groups, and review the programmes already loaded
-            into the catalogue before you run a match.
+            Filter the catalogue by practical constraints, compare selections side by side,
+            generate simpler parent-friendly summaries, and export the shortlist without creating
+            an account.
           </p>
           <div class="hero-links">
             <a class="secondary-button" href="/user">Back to matcher</a>
           </div>
         </section>
 
-        <section class="panel catalog-panel">
+        <section class="panel catalog-panel catalog-workspace-panel">
           <div class="panel-heading">
-            <h2>University Selector</h2>
-            <p>Choose a university to load and group its courses by faculty.</p>
+            <h2>Catalog Workspace</h2>
+            <p>Use the filters first, then compare, save, ask, or export selected courses.</p>
           </div>
-          <div class="catalog-toolbar">
+
+          <div class="catalog-filter-grid">
             <label class="catalog-select-label">
               University
               <select id="catalog-university-select">
                 <option value="">Select a university</option>
               </select>
             </label>
+            <label>
+              Search
+              <input id="catalog-search" type="text" placeholder="Search by course, faculty, or code" />
+            </label>
+            <label>
+              Award level
+              <select id="catalog-award-level">
+                <option value="">All levels</option>
+                <option value="foundation">Foundation</option>
+                <option value="certificate">Certificate</option>
+                <option value="diploma">Diploma</option>
+                <option value="bachelor">Bachelor</option>
+                <option value="master">Master</option>
+                <option value="doctorate">Doctorate</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+            <label>
+              Study mode
+              <input id="catalog-study-mode" type="text" placeholder="e.g. full-time" />
+            </label>
+            <label>
+              Duration
+              <input id="catalog-duration" type="text" placeholder="e.g. 4 years" />
+            </label>
+            <label>
+              Intake / deadline
+              <input id="catalog-intake" type="text" placeholder="e.g. September" />
+            </label>
+            <label>
+              Tuition / fees
+              <input id="catalog-tuition" type="text" placeholder="e.g. RM or fee note" />
+            </label>
+            <label>
+              State
+              <input id="catalog-state" type="text" placeholder="e.g. Selangor" />
+            </label>
           </div>
-          <div id="catalog-status" class="status-text"></div>
-          <div id="catalog-groups" class="catalog-groups"></div>
+
+          <div class="catalog-action-row">
+            <div class="catalog-top-actions">
+              <button id="catalog-export-saved" type="button" class="secondary-button">Export saved PDF</button>
+              <button id="catalog-clear-saved" type="button" class="secondary-button">Clear saved</button>
+            </div>
+          </div>
+
+          <div class="catalog-status-row">
+            <div id="catalog-status" class="status-text"></div>
+            <div id="catalog-selection-status" class="status-text"></div>
+          </div>
+
+          <section class="catalog-side-by-side">
+            <div class="catalog-main-column">
+              <div id="catalog-groups" class="catalog-groups"></div>
+            </div>
+
+            <aside class="catalog-side-column">
+              <section class="panel catalog-side-panel">
+                <div class="panel-heading">
+                  <h3>Compare Courses</h3>
+                  <p>Select up to 3 courses from the catalog.</p>
+                </div>
+                <div id="catalog-compare-list" class="catalog-mini-list">
+                  <div class="summary-placeholder">No courses selected for comparison.</div>
+                </div>
+                <button id="catalog-export-compare" type="button" class="secondary-button">Export compare PDF</button>
+                <div id="catalog-compare-grid" class="catalog-compare-grid"></div>
+              </section>
+
+              <section class="panel catalog-side-panel">
+                <div class="panel-heading">
+                  <h3>Saved Courses</h3>
+                  <p>Stored locally in this browser.</p>
+                </div>
+                <div id="catalog-saved-list" class="catalog-mini-list">
+                  <div class="summary-placeholder">No saved courses yet.</div>
+                </div>
+              </section>
+
+              <section class="panel catalog-side-panel">
+                <div class="panel-heading">
+                  <h3>Ask About This Course</h3>
+                  <p>Pick one course card and ask a question grounded in its catalog data.</p>
+                </div>
+                <div id="catalog-chat-course" class="summary-placeholder">
+                  Select a course first to ask questions.
+                </div>
+                <label>
+                  Question
+                  <textarea
+                    id="catalog-chat-question"
+                    rows="4"
+                    placeholder="Example: Is this more technical or management-focused?"
+                  ></textarea>
+                </label>
+                <button id="catalog-chat-submit" type="button" class="primary-button">Ask course</button>
+                <div id="catalog-chat-answer" class="summary-placeholder">
+                  The answer will appear here.
+                </div>
+              </section>
+            </aside>
+          </section>
         </section>
       </main>
     </div>

@@ -5,8 +5,18 @@ const results = document.getElementById('results');
 const preferredUniversities = document.getElementById('preferred-universities');
 const resultFileInput = document.getElementById('result-file');
 const extractedSubjects = document.getElementById('extracted-subjects');
+const rerunButton = document.getElementById('rerun-button');
 
 let universityOptions = [];
+let latestParsedSnapshot = null;
+
+function setRerunVisibility(isVisible) {
+  if (!rerunButton) {
+    return;
+  }
+
+  rerunButton.hidden = !isVisible;
+}
 
 const UNIVERSITY_VISUALS = {
   UM: {
@@ -51,10 +61,7 @@ function resolveUniversityAbbreviation(course) {
       String(university.id) === String(course?.universityId) ||
       String(university.name || '').toLowerCase() === name
   );
-  if (preferred?.abbreviation) {
-    return preferred.abbreviation;
-  }
-
+  if (preferred?.abbreviation) return preferred.abbreviation;
   if (name.includes('malaya')) return 'UM';
   if (name.includes('putra')) return 'UPM';
   if (name.includes('kebangsaan')) return 'UKM';
@@ -66,9 +73,7 @@ function resolveUniversityAbbreviation(course) {
 
 function resolveUniversityLogoUrl(course) {
   const websiteUrl = course?.university?.websiteUrl;
-  if (!websiteUrl) {
-    return null;
-  }
+  if (!websiteUrl) return null;
 
   try {
     const domain = new URL(websiteUrl).hostname.replace(/^www\./, '');
@@ -81,6 +86,30 @@ function resolveUniversityLogoUrl(course) {
 function resolveUniversityBackground(course) {
   const abbreviation = resolveUniversityAbbreviation(course);
   return UNIVERSITY_VISUALS[abbreviation]?.background || UNIVERSITY_VISUALS.UUM.background;
+}
+
+function buildModeLabel(course) {
+  if (course.matchMode === 'requirements') return 'Structured requirements';
+  if (course.matchMode === 'qwen') {
+    return `Qwen assessment${course.aiAssessment?.model ? ` (${escapeHtml(course.aiAssessment.model)})` : ''}`;
+  }
+  return 'Heuristic assessment';
+}
+
+function buildRequirementsFromForm() {
+  const formData = new FormData(matchForm);
+  const requirements = {};
+  const selectedUniversities = formData.getAll('preferredUniversities');
+  if (selectedUniversities.length) {
+    requirements.preferredUniversities = selectedUniversities;
+  }
+  if (formData.get('preferredFaculty')) {
+    requirements.preferredFaculty = formData.get('preferredFaculty');
+  }
+  if (formData.get('interestStatement')) {
+    requirements.interestStatement = formData.get('interestStatement');
+  }
+  return requirements;
 }
 
 function renderExtractedSubjects(subjects = []) {
@@ -109,6 +138,10 @@ function renderExtractedSubjects(subjects = []) {
 
 function renderSummary(payload) {
   const qwenCount = payload.matches.filter((course) => course.matchMode === 'qwen').length;
+  const translatedInterest = Array.isArray(payload.input.interestProfile?.preferredCourseAreas)
+    ? payload.input.interestProfile.preferredCourseAreas.join(', ')
+    : '';
+
   summary.innerHTML = `
     <strong>Student:</strong> ${escapeHtml(payload.input.student?.name || 'Unknown')}<br />
     <strong>PNGK:</strong> ${
@@ -119,26 +152,84 @@ function renderSummary(payload) {
     }<br />
     <strong>Matches found:</strong> ${payload.matches.length}<br />
     <strong>AI-assisted matches:</strong> ${qwenCount}<br />
-    <strong>Interest note:</strong> ${escapeHtml(payload.input.interestStatement || 'Not provided')}
+    <strong>Interest note:</strong> ${escapeHtml(payload.input.interestStatement || 'Not provided')}<br />
+    <strong>Interest translated into:</strong> ${escapeHtml(translatedInterest || 'No specific course areas inferred')}
   `;
 }
 
-function buildModeLabel(course) {
-  if (course.matchMode === 'requirements') {
-    return 'Structured requirements';
+function buildReasonListMarkup(items = []) {
+  if (!items.length) {
+    return '<div class="summary-placeholder compact-placeholder">No signals recorded for this section.</div>';
   }
-  if (course.matchMode === 'qwen') {
-    return `Qwen assessment${course.aiAssessment?.model ? ` (${escapeHtml(course.aiAssessment.model)})` : ''}`;
-  }
-  return 'Heuristic assessment';
+
+  return `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
 }
 
-function buildReasonsMarkup(reasons = []) {
-  if (!reasons.length) {
-    return '<div class="summary-placeholder">No match reasons were generated for this course.</div>';
+function buildGapMarkup(gaps = []) {
+  if (!gaps.length) {
+    return '<div class="summary-placeholder compact-placeholder">No major subject gaps were detected.</div>';
   }
 
-  return `<ul>${reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join('')}</ul>`;
+  return `<ul>${gaps.map((gap) => `<li>${escapeHtml(gap.message || gap.subject || 'Gap detected')}</li>`).join('')}</ul>`;
+}
+
+function buildAlternativesMarkup(items = []) {
+  if (!items.length) {
+    return '<div class="summary-placeholder compact-placeholder">No nearby alternative pathways were suggested.</div>';
+  }
+
+  return `<div class="chip-list">${items.map((item) => `<span class="chip static-chip">${escapeHtml(item)}</span>`).join('')}</div>`;
+}
+
+function buildExplanationMarkup(course, openByDefault = false) {
+  const explanation = course.explanation || {};
+  const confidence = explanation.confidence || null;
+
+  return `
+    <details class="match-explainer collapsed-match-explainer"${openByDefault ? ' open' : ''}>
+      <summary>Why this suits you</summary>
+      <div class="explanation-grid">
+        <section class="explanation-section">
+          <strong>Score fit</strong>
+          ${buildReasonListMarkup(explanation.scoreFit || [])}
+        </section>
+        <section class="explanation-section">
+          <strong>Interest fit</strong>
+          ${buildReasonListMarkup(explanation.interestFit || [])}
+        </section>
+        <section class="explanation-section">
+          <strong>Preference fit</strong>
+          ${buildReasonListMarkup(explanation.preferenceFit || [])}
+        </section>
+        <section class="explanation-section">
+          <strong>Match confidence</strong>
+          ${
+            confidence
+              ? `<div class="confidence-panel">
+                   <span class="confidence-label">${escapeHtml(confidence.label)}</span>
+                   <span class="confidence-score">${escapeHtml(confidence.score)}</span>
+                 </div>
+                 <p>${escapeHtml(confidence.summary || '')}</p>`
+              : '<div class="summary-placeholder compact-placeholder">No confidence explanation generated.</div>'
+          }
+        </section>
+        <section class="explanation-section">
+          <strong>Subject gap detector</strong>
+          ${buildGapMarkup(explanation.subjectGaps || [])}
+        </section>
+        <section class="explanation-section">
+          <strong>Alternative pathways</strong>
+          ${buildAlternativesMarkup(explanation.alternativeSuggestions || [])}
+        </section>
+      </div>
+    </details>
+  `;
+}
+
+function buildEligibilityBadge(course) {
+  const label = course.eligibility?.label || 'Review';
+  const tone = course.eligibility?.tone || 'borderline';
+  return `<span class="eligibility-badge eligibility-${escapeHtml(tone)}">${escapeHtml(label)}</span>`;
 }
 
 function renderFeaturedResult(course) {
@@ -155,7 +246,10 @@ function renderFeaturedResult(course) {
     <div class="featured-result-content">
       <div class="featured-result-head">
         <span class="featured-result-kicker">Top recommendation</span>
-        <div class="match-badge featured-match-badge">Match score ${course.matchScore}</div>
+        <div class="featured-result-badges">
+          ${buildEligibilityBadge(course)}
+          <div class="match-badge featured-match-badge">Match score ${course.matchScore}</div>
+        </div>
       </div>
       <div class="featured-result-brand">
         ${
@@ -174,10 +268,14 @@ function renderFeaturedResult(course) {
         <span>${buildModeLabel(course)}</span>
       </div>
       <p class="featured-result-description">${escapeHtml(course.description || 'No description available yet.')}</p>
-      <details class="match-explainer featured-result-reasons">
-        <summary>Why this is the best fit</summary>
-        ${buildReasonsMarkup(course.matchReasons || [])}
-      </details>
+      <div class="featured-result-confidence">
+        <strong>${escapeHtml(course.explanation?.confidence?.label || 'Confidence')}</strong>
+        <span>${escapeHtml(course.explanation?.confidence?.summary || 'No confidence explanation available.')}</span>
+      </div>
+      <div class="featured-result-eligibility-note">
+        ${escapeHtml(course.eligibility?.summary || 'Review the explanation for more detail.')}
+      </div>
+      ${buildExplanationMarkup(course, true)}
     </div>
   `;
   results.appendChild(article);
@@ -192,7 +290,10 @@ function renderStandardResult(course, index) {
         <span class="recommendation-rank">Recommendation ${index + 1}</span>
         <h3>${escapeHtml(course.name)}</h3>
       </div>
-      <div class="match-badge">Match score ${course.matchScore}</div>
+      <div class="recommendation-badges">
+        ${buildEligibilityBadge(course)}
+        <div class="match-badge">Match score ${course.matchScore}</div>
+      </div>
     </div>
     <div class="result-meta">
       <span>${escapeHtml(course.university?.name || 'Unknown university')}</span>
@@ -201,10 +302,11 @@ function renderStandardResult(course, index) {
       <span>${buildModeLabel(course)}</span>
     </div>
     <p>${escapeHtml(course.description || 'No description available yet.')}</p>
-    <details class="match-explainer collapsed-match-explainer">
-      <summary>Why this suits you</summary>
-      ${buildReasonsMarkup(course.matchReasons || [])}
-    </details>
+    <div class="recommendation-confidence-line">
+      <strong>${escapeHtml(course.explanation?.confidence?.label || 'Confidence')}</strong>
+      <span>${escapeHtml(course.eligibility?.summary || 'Review the explanation for detail.')}</span>
+    </div>
+    ${buildExplanationMarkup(course, false)}
   `;
   results.appendChild(article);
 }
@@ -224,8 +326,8 @@ function renderResults(payload) {
   otherMatches.forEach((course, index) => renderStandardResult(course, index + 1));
 }
 
-async function fetchJson(url) {
-  const response = await fetch(url);
+async function fetchJson(url, options = {}) {
+  const response = await fetch(url, options);
   const payload = await response.json();
   if (!response.ok) {
     throw new Error(payload.error || 'Request failed');
@@ -252,48 +354,83 @@ async function loadUniversities() {
   renderUniversityOptions(universityOptions);
 }
 
-matchForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
+async function submitPdfMatch() {
   if (!resultFileInput.files.length) {
     formStatus.textContent = 'Select an STPM PDF first';
     return;
   }
 
   formStatus.textContent = 'Uploading and parsing STPM result...';
+  const requirements = buildRequirementsFromForm();
 
-  const formData = new FormData(matchForm);
-  const requirements = {};
-  const selectedUniversities = formData.getAll('preferredUniversities');
-  if (selectedUniversities.length) {
-    requirements.preferredUniversities = selectedUniversities;
+  const payloadBody = new FormData();
+  payloadBody.append('resultFile', resultFileInput.files[0]);
+  payloadBody.append('requirements', JSON.stringify(requirements));
+
+  const payload = await fetchJson('/api/matches/stpm-upload', {
+    method: 'POST',
+    body: payloadBody,
+  });
+
+  latestParsedSnapshot = {
+    student: payload.input.student,
+    scores: payload.input.scores,
+    subjects: payload.input.subjects,
+  };
+  setRerunVisibility(true);
+  renderResults(payload);
+  formStatus.textContent = 'Done';
+}
+
+async function rerunWhatIf() {
+  if (!latestParsedSnapshot?.scores) {
+    formStatus.textContent = 'Upload an STPM PDF first before running a what-if simulation';
+    return;
   }
-  if (formData.get('preferredFaculty')) {
-    requirements.preferredFaculty = formData.get('preferredFaculty');
-  }
-  if (formData.get('interestStatement')) {
-    requirements.interestStatement = formData.get('interestStatement');
-  }
+
+  formStatus.textContent = 'Running what-if simulation with the uploaded scores...';
+  const requirements = buildRequirementsFromForm();
+  const payload = await fetchJson('/api/matches/manual', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      scores: latestParsedSnapshot.scores,
+      requirements,
+    }),
+  });
+
+  renderResults({
+    input: {
+      ...payload.input,
+      student: latestParsedSnapshot.student,
+      subjects: latestParsedSnapshot.subjects,
+    },
+    matches: payload.matches,
+  });
+  formStatus.textContent = 'What-if results updated';
+}
+
+matchForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
 
   try {
-    const payloadBody = new FormData();
-    payloadBody.append('resultFile', resultFileInput.files[0]);
-    payloadBody.append('requirements', JSON.stringify(requirements));
-
-    const response = await fetch('/api/matches/stpm-upload', {
-      method: 'POST',
-      body: payloadBody,
-    });
-    const payload = await response.json();
-    if (!response.ok) {
-      throw new Error(payload.error || 'Match request failed');
-    }
-    renderResults(payload);
-    formStatus.textContent = 'Done';
+    await submitPdfMatch();
   } catch (error) {
     formStatus.textContent = error.message;
   }
 });
 
+rerunButton?.addEventListener('click', async () => {
+  try {
+    await rerunWhatIf();
+  } catch (error) {
+    formStatus.textContent = error.message;
+  }
+});
+
+setRerunVisibility(false);
 renderExtractedSubjects([]);
 loadUniversities().catch((error) => {
   formStatus.textContent = error.message;

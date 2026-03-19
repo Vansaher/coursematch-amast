@@ -6,6 +6,7 @@ const courseRoutes = require('./routes/courseRoutes');
 const matchRoutes = require('./routes/matchRoutes');
 const universityRoutes = require('./routes/universityRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const userAccountRoutes = require('./routes/userAccountRoutes');
 const { getSessionFromRequest, requireAdminPage } = require('./utils/adminAuth');
 
 const app = express();
@@ -22,6 +23,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/universities', universityRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/matches', matchRoutes);
+app.use('/api/account', userAccountRoutes);
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
@@ -29,6 +31,10 @@ app.get('/', (req, res) => {
 
 app.get('/user', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'user.html'));
+});
+
+app.get('/account', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'account.html'));
 });
 
 app.get('/catalog', (req, res) => {

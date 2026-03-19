@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AMAST Account</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="page-shell user-shell dashboard-style-shell landing-home-shell app-topbar-shell">
+    <div class="backdrop"></div>
+    <div class="admin-dashboard user-dashboard-shell topbar-dashboard-shell">
+      <main class="admin-main topbar-main">
+        <header class="admin-topbar landing-app-topbar">
+          <a class="landing-home-brand" href="/">
+            <span class="landing-home-brand-mark">A</span>
+            <span class="landing-home-brand-copy">
+              <strong>AMAST Match</strong>
+              <span>Malaysian university course matching</span>
+            </span>
+          </a>
+          <nav class="admin-nav topbar-nav">
+            <a class="admin-nav-item" href="/user">Course Matcher</a>
+            <a class="admin-nav-item" href="/user/catalog">Course Catalog</a>
+            <a class="admin-nav-item active" href="/account">Account</a>
+          </nav>
+        </header>
+
+        <section class="hero-card user-hero-banner">
+          <p class="eyebrow">Optional Account</p>
+          <h1>Sign in only if you want persistence and planning tools.</h1>
+          <p class="lede">
+            You can still use matching and browsing without an account. Sign in if you want saved
+            shortlists, comparison history, match history, planner tracking, drafts, and alerts.
+          </p>
+        </section>
+
+        <section class="panel-grid account-grid">
+          <section class="panel">
+            <div class="panel-heading">
+              <h2>Create Account</h2>
+              <p>Use this only for optional saved features.</p>
+            </div>
+            <form id="register-form" class="stack-form">
+              <label>Name<input name="name" type="text" required /></label>
+              <label>Email<input name="email" type="email" required /></label>
+              <label>Password<input name="password" type="password" required /></label>
+              <button type="submit" class="primary-button">Register</button>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <h2>Log In</h2>
+              <p>Access saved shortlist, history, planner, and alerts.</p>
+            </div>
+            <form id="login-form" class="stack-form">
+              <label>Email<input name="email" type="email" required /></label>
+              <label>Password<input name="password" type="password" required /></label>
+              <div class="form-actions">
+                <button type="submit" class="primary-button">Log in</button>
+                <button id="logout-button" type="button" class="secondary-button">Log out</button>
+              </div>
+            </form>
+            <div id="account-status" class="status-text"></div>
+          </section>
+        </section>
+
+        <section id="account-dashboard" class="panel account-dashboard-panel" hidden>
+          <div class="panel-heading">
+            <h2>Account Dashboard</h2>
+            <p id="account-user-line">Not logged in.</p>
+          </div>
+
+          <div class="account-dashboard-grid">
+            <section class="summary-placeholder">
+              <strong>Saved shortlist</strong>
+              <div id="account-saved-courses" class="account-list"></div>
+            </section>
+            <section class="summary-placeholder">
+              <strong>Comparison history</strong>
+              <div id="account-comparisons" class="account-list"></div>
+            </section>
+            <section class="summary-placeholder">
+              <strong>Match history</strong>
+              <div id="account-match-sessions" class="account-list"></div>
+            </section>
+            <section class="summary-placeholder">
+              <strong>Notifications / alerts</strong>
+              <div id="account-alerts" class="account-list"></div>
+            </section>
+          </div>
+
+          <section class="panel account-planner-panel">
+            <div class="panel-heading">
+              <h3>Application Planner</h3>
+              <p>Add application tasks and track their status.</p>
+            </div>
+            <form id="planner-form" class="form-row">
+              <label>Task<input name="title" type="text" required /></label>
+              <label>Due date<input name="dueDate" type="date" /></label>
+              <label>Status
+                <select name="status">
+                  <option value="planned">Planned</option>
+                  <option value="in_progress">In progress</option>
+                  <option value="done">Done</option>
+                </select>
+              </label>
+              <label>Details<input name="details" type="text" placeholder="Optional" /></label>
+            </form>
+            <div class="form-actions">
+              <button id="planner-submit" type="button" class="primary-button">Add planner item</button>
+            </div>
+            <div id="account-planner" class="result-list compact-list"></div>
+          </section>
+
+          <section class="panel account-career-panel">
+            <div class="panel-heading">
+              <h3>Career-Direction Explorer</h3>
+              <p>Ask for broader study directions based on your long-term interests.</p>
+            </div>
+            <label>
+              Interest statement
+              <textarea id="career-interest" rows="4" placeholder="I like tech, problem solving, but also business-facing work."></textarea>
+            </label>
+            <div class="form-actions">
+              <button id="career-submit" type="button" class="primary-button">Explore directions</button>
+            </div>
+            <div id="career-output" class="summary-placeholder">No exploration run yet.</div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script src="/account.js"></script>
+  </body>
+</html>

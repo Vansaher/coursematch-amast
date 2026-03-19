@@ -95,6 +95,7 @@ const COURSE_PROFILES = [
     recommendedSubjects: ['General Studies', 'Mathematics T', 'Chemistry', 'Biology'],
     optionalSubjects: ['Physics'],
     label: 'Medicine or life science',
+    relatedAlternatives: ['Biomedical Science', 'Nutrition', 'Health Science', 'Biotechnology'],
   },
   {
     id: 'engineering',
@@ -120,6 +121,7 @@ const COURSE_PROFILES = [
     recommendedSubjects: ['General Studies', 'Mathematics T', 'Chemistry', 'Physics'],
     optionalSubjects: ['Information and Communications Technology'],
     label: 'Engineering or applied science',
+    relatedAlternatives: ['Computer Science', 'Information Systems', 'Software Engineering', 'Multimedia'],
   },
   {
     id: 'accounting',
@@ -127,6 +129,7 @@ const COURSE_PROFILES = [
     recommendedSubjects: ['General Studies', 'Mathematics M', 'Economics', 'Accounting'],
     optionalSubjects: ['Business Studies'],
     label: 'Accounting or finance',
+    relatedAlternatives: ['Business Analytics', 'Economics', 'Business Administration', 'Information Systems'],
   },
   {
     id: 'business',
@@ -134,6 +137,7 @@ const COURSE_PROFILES = [
     recommendedSubjects: ['General Studies', 'Mathematics M', 'Economics', 'Business Studies'],
     optionalSubjects: ['Accounting'],
     label: 'Business or management',
+    relatedAlternatives: ['Marketing', 'Economics', 'Business Analytics', 'Entrepreneurship'],
   },
   {
     id: 'law-education',
@@ -141,6 +145,7 @@ const COURSE_PROFILES = [
     recommendedSubjects: ['General Studies', 'Malay Language', 'Geography', 'History'],
     optionalSubjects: ['Literature in English'],
     label: 'Law or education',
+    relatedAlternatives: ['Communication', 'Public Administration', 'Education Studies', 'Psychology'],
   },
   {
     id: 'language-arts',
@@ -148,6 +153,7 @@ const COURSE_PROFILES = [
     recommendedSubjects: ['Malay Language', 'Literature in English', 'Communicative Malay Literature'],
     optionalSubjects: ['Chinese Language', 'Tamil Language', 'Arabic Language', 'History'],
     label: 'Language or literature',
+    relatedAlternatives: ['Communication', 'Media Studies', 'Education', 'Creative Writing'],
   },
   {
     id: 'arts-sports',
@@ -155,6 +161,7 @@ const COURSE_PROFILES = [
     recommendedSubjects: ['General Studies', 'Visual Arts', 'Sports Science'],
     optionalSubjects: ['Malay Language'],
     label: 'Arts or sports',
+    relatedAlternatives: ['Multimedia', 'Graphic Design', 'Communication', 'Sports Management'],
   },
 ];
 
@@ -648,6 +655,8 @@ module.exports = {
   canonicalSubject,
   findSubjectMatch,
   getQwenCandidateLimit,
+  inferCourseProfile,
   isQwenConfigured,
   scoreEntries,
+  summarizeText,
 };

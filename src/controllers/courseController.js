@@ -1,5 +1,6 @@
 const { Op } = require('sequelize');
 const { Course, University, CourseModule } = require('../models');
+const { askCourseQuestion } = require('../services/qwenCourseCatalogAssistant');
 
 const defaultInclude = [
   { model: University, as: 'university' },
@@ -51,6 +52,25 @@ exports.getCourseById = async (req, res) => {
     });
     if (!course) return res.status(404).json({ error: 'Not found' });
     res.json(course);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.askCourse = async (req, res) => {
+  try {
+    const course = await Course.findByPk(req.params.id, {
+      include: defaultInclude,
+    });
+    if (!course) return res.status(404).json({ error: 'Not found' });
+
+    const question = String(req.body?.question || '').trim();
+    if (!question) {
+      return res.status(400).json({ error: 'Enter a question first' });
+    }
+
+    const answer = await askCourseQuestion(course.toJSON(), question);
+    res.json(answer);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

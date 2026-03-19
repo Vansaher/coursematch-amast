@@ -8,6 +8,7 @@ const {
   canonicalSubject,
   findSubjectMatch,
   getQwenCandidateLimit,
+  inferCourseProfile,
   isQwenConfigured,
 } = require('../services/qwenCourseMatcher');
 const { parseStpmPdfBuffer } = require('../services/stpmPdfParser');
@@ -144,6 +145,161 @@ function parseRequiredSubjects(reqs = {}) {
     .filter((item) => item && item.name);
 }
 
+function detectSubjectGaps(course, scores = {}, suggestedSubjects = []) {
+  const studentEntries = scoreEntries(scores);
+  const gaps = [];
+  const structuredSubjects = parseRequiredSubjects(course.requirements || {});
+
+  if (structuredSubjects.length) {
+    for (const subject of structuredSubjects) {
+      const matched = findSubjectMatch(studentEntries, subject.name);
+      if (!matched) {
+        gaps.push({
+          type: 'missing_required_subject',
+          subject: subject.name,
+          message: `Missing required subject: ${subject.name}.`,
+        });
+        continue;
+      }
+
+      if (subject.minScore !== null && matched.value < subject.minScore) {
+        gaps.push({
+          type: 'below_required_score',
+          subject: matched.subject,
+          currentScore: matched.value,
+          requiredScore: subject.minScore,
+          message: `${matched.subject} is below the preferred threshold (${matched.value}/${subject.minScore}).`,
+        });
+      }
+    }
+
+    return gaps;
+  }
+
+  const uniqueSuggestions = [...new Set((Array.isArray(suggestedSubjects) ? suggestedSubjects : []).filter(Boolean))];
+  for (const subjectName of uniqueSuggestions) {
+    const matched = findSubjectMatch(studentEntries, subjectName);
+    if (!matched) {
+      gaps.push({
+        type: 'missing_recommended_subject',
+        subject: subjectName,
+        message: `Recommended subject not found: ${subjectName}.`,
+      });
+      continue;
+    }
+
+    if (matched.value < 60) {
+      gaps.push({
+        type: 'weak_recommended_subject',
+        subject: matched.subject,
+        currentScore: matched.value,
+        message: `${matched.subject} is relevant but currently not a strong score (${matched.value}).`,
+      });
+    }
+  }
+
+  return gaps;
+}
+
+function buildAlternativeSuggestions(course, gaps = [], interestProfile = null) {
+  const profile = inferCourseProfile(course);
+  const suggestions = new Set();
+
+  if (Array.isArray(profile?.relatedAlternatives)) {
+    profile.relatedAlternatives.forEach((item) => suggestions.add(item));
+  }
+
+  if (Array.isArray(interestProfile?.preferredCourseAreas)) {
+    interestProfile.preferredCourseAreas.forEach((item) => suggestions.add(item));
+  }
+
+  if (!suggestions.size && gaps.length) {
+    suggestions.add('Related interdisciplinary programmes');
+    suggestions.add('Broader degree options in the same faculty');
+  }
+
+  const normalizedCourseName = String(course.name || '').toLowerCase();
+  return [...suggestions]
+    .filter((item) => item && !normalizedCourseName.includes(String(item).toLowerCase()))
+    .slice(0, 4);
+}
+
+function buildEligibility(matchScore, gapCount, hasRequirements) {
+  if (hasRequirements && gapCount === 0 && matchScore >= 78) {
+    return {
+      label: 'Eligible',
+      tone: 'eligible',
+      summary: 'Your current scores look aligned with the course requirements.',
+    };
+  }
+
+  if (matchScore >= 64) {
+    return {
+      label: 'Borderline',
+      tone: 'borderline',
+      summary: gapCount
+        ? 'You have a realistic path here, but there are some academic gaps to review.'
+        : 'This looks plausible, but you should still check course-specific details.',
+    };
+  }
+
+  return {
+    label: 'Explore Alternative',
+    tone: 'explore',
+    summary: 'This is more exploratory than direct. Related fields may fit better right now.',
+  };
+}
+
+function buildConfidence(matchScore, subjectPriorityScore, matchMode, gapCount, hasRequirements) {
+  const baseScore = Math.round(
+    Math.max(
+      20,
+      Math.min(
+        98,
+        subjectPriorityScore * 0.45 +
+          matchScore * 0.45 +
+          (hasRequirements ? 12 : matchMode === 'qwen' ? 6 : 0) -
+          gapCount * 7
+      )
+    )
+  );
+
+  if (baseScore >= 78) {
+    return {
+      label: 'High confidence',
+      score: baseScore,
+      summary: hasRequirements
+        ? 'Strong subject alignment and clearer requirement evidence support this result.'
+        : 'The result shows strong overall fit based on your scores and course profile.',
+    };
+  }
+
+  if (baseScore >= 58) {
+    return {
+      label: 'Medium confidence',
+      score: baseScore,
+      summary: 'The result is promising, but some assumptions or weaker areas still affect certainty.',
+    };
+  }
+
+  return {
+    label: 'Low confidence',
+    score: baseScore,
+    summary: 'This recommendation is exploratory and should be treated as a starting point.',
+  };
+}
+
+function buildExplanation(scoreFit = [], interestFit = [], preferenceFit = [], confidence, subjectGaps = [], alternatives = []) {
+  return {
+    scoreFit,
+    interestFit,
+    preferenceFit,
+    confidence,
+    subjectGaps,
+    alternativeSuggestions: alternatives,
+  };
+}
+
 function applyPreferenceFilters(course, requirements = {}) {
   const reasons = [];
 
@@ -167,11 +323,14 @@ function applyPreferenceFilters(course, requirements = {}) {
   return reasons;
 }
 
-function buildRequirementMatch(course, scores = {}, requirements = {}, interestAssessment = null) {
-  const reasons = applyPreferenceFilters(course, requirements);
-  if (!reasons) {
+function buildRequirementMatch(course, scores = {}, requirements = {}, interestAssessment = null, interestProfile = null) {
+  const preferenceReasons = applyPreferenceFilters(course, requirements);
+  if (!preferenceReasons) {
     return null;
   }
+  const reasons = [...preferenceReasons];
+  const scoreReasons = [];
+  const interestReasons = interestAssessment?.reasons || [];
 
   const reqs = course.requirements || {};
   const average = calculateAverage(scores);
@@ -180,7 +339,9 @@ function buildRequirementMatch(course, scores = {}, requirements = {}, interestA
     if (average < Number(reqs.minAverage)) {
       return null;
     }
-    reasons.push(`Average score meets minimum ${reqs.minAverage}`);
+    const averageReason = `Average score meets minimum ${reqs.minAverage}`;
+    reasons.push(averageReason);
+    scoreReasons.push(averageReason);
   }
 
   const requiredSubjects = parseRequiredSubjects(reqs);
@@ -215,7 +376,9 @@ function buildRequirementMatch(course, scores = {}, requirements = {}, interestA
       return null;
     }
 
-    reasons.push(`Required subjects provided: ${matchedSubjects.join(', ')}`);
+    const subjectReason = `Required subjects provided: ${matchedSubjects.join(', ')}`;
+    reasons.push(subjectReason);
+    scoreReasons.push(subjectReason);
   }
 
   const subjectFirst = buildSubjectFirstScore(
@@ -232,10 +395,16 @@ function buildRequirementMatch(course, scores = {}, requirements = {}, interestA
   }
   if (interestAssessment && interestAssessment.score !== null) {
     matchScore = Math.round(matchScore * 0.78 + interestAssessment.score * 0.22);
-    reasons.push(...interestAssessment.reasons);
+    reasons.push(...interestReasons);
   }
 
-  reasons.push(...buildSuitabilityNarrative(course, requiredSubjectNames, scores));
+  const narrativeReasons = buildSuitabilityNarrative(course, requiredSubjectNames, scores);
+  reasons.push(...narrativeReasons);
+  scoreReasons.push(...narrativeReasons);
+  const subjectGaps = detectSubjectGaps(course, scores, requiredSubjectNames);
+  const eligibility = buildEligibility(matchScore, subjectGaps.length, true);
+  const confidence = buildConfidence(matchScore, subjectFirst.score, 'requirements', subjectGaps.length, true);
+  const alternatives = buildAlternativeSuggestions(course, subjectGaps, interestProfile);
 
   return {
     ...course.toJSON(),
@@ -244,13 +413,14 @@ function buildRequirementMatch(course, scores = {}, requirements = {}, interestA
     studentAverageScore: average,
     subjectPriorityScore: subjectFirst.score,
     matchMode: 'requirements',
+    eligibility,
+    explanation: buildExplanation(scoreReasons, interestReasons, preferenceReasons, confidence, subjectGaps, alternatives),
   };
 }
 
-async function findMatches(scores = {}, requirements = {}) {
-  const interestProfile = requirements.interestStatement
-    ? await buildInterestProfile(requirements.interestStatement)
-    : null;
+async function findMatches(scores = {}, requirements = {}, interestProfile = null) {
+  const resolvedInterestProfile =
+    interestProfile || (requirements.interestStatement ? await buildInterestProfile(requirements.interestStatement) : null);
   const courses = await Course.findAll({
     include: [
       { model: University, as: 'university' },
@@ -266,19 +436,19 @@ async function findMatches(scores = {}, requirements = {}) {
     if (!filteredReasons) {
       continue;
     }
-    const interestAssessment = buildInterestAssessment(course, interestProfile);
+    const interestAssessment = buildInterestAssessment(course, resolvedInterestProfile);
 
     if (hasStructuredRequirements(course)) {
-      const match = buildRequirementMatch(course, scores, requirements, interestAssessment);
+      const match = buildRequirementMatch(course, scores, requirements, interestAssessment, resolvedInterestProfile);
       if (match) {
-        if (interestProfile) {
+        if (resolvedInterestProfile) {
           match.aiAssessment = {
-            source: interestProfile.source,
+            source: resolvedInterestProfile.source,
             profileLabel: 'Interest profile',
             matchedSubjects: [],
-            recommendedSubjects: interestProfile.preferredCourseAreas || [],
-            model: interestProfile.model || null,
-            interestSummary: interestProfile.summary,
+            recommendedSubjects: resolvedInterestProfile.preferredCourseAreas || [],
+            model: resolvedInterestProfile.model || null,
+            interestSummary: resolvedInterestProfile.summary,
           };
         }
         directMatches.push(match);
@@ -307,7 +477,7 @@ async function findMatches(scores = {}, requirements = {}) {
   const softMatches = await Promise.all(
     rankedCandidates.map(async (candidate) => {
       const assessment = qwenCandidateIds.has(String(candidate.course.id))
-        ? await buildCourseAssessment(candidate.course, scores, { interestProfile })
+        ? await buildCourseAssessment(candidate.course, scores, { interestProfile: resolvedInterestProfile })
         : candidate.heuristicAssessment;
 
       if (!assessment.applicable) {
@@ -324,35 +494,57 @@ async function findMatches(scores = {}, requirements = {}) {
       const matchScore = candidate.interestAssessment.score === null
         ? Math.round(subjectPriorityScore * 0.75 + assessment.score * 0.25)
         : Math.round(subjectPriorityScore * 0.58 + assessment.score * 0.24 + candidate.interestAssessment.score * 0.18);
+      const scoreReasons = [
+        ...assessment.reasons,
+        ...buildSuitabilityNarrative(
+          candidate.course,
+          assessment.recommendedSubjects && assessment.recommendedSubjects.length
+            ? assessment.recommendedSubjects
+            : assessment.matchedSubjects,
+          scores
+        ),
+        ...(assessment.recommendedSubjects.length
+          ? [`Recommended subjects: ${assessment.recommendedSubjects.join(', ')}`]
+          : []),
+      ];
+      const subjectGaps = detectSubjectGaps(
+        candidate.course,
+        scores,
+        assessment.recommendedSubjects && assessment.recommendedSubjects.length
+          ? assessment.recommendedSubjects
+          : assessment.matchedSubjects
+      );
+      const eligibility = buildEligibility(matchScore, subjectGaps.length, false);
+      const confidence = buildConfidence(matchScore, subjectPriorityScore, assessment.source, subjectGaps.length, false);
+      const alternatives = buildAlternativeSuggestions(candidate.course, subjectGaps, resolvedInterestProfile);
 
       return {
         ...candidate.course.toJSON(),
         matchScore,
         matchReasons: [
           ...candidate.filteredReasons,
-          ...assessment.reasons,
+          ...scoreReasons,
           ...candidate.interestAssessment.reasons,
-          ...buildSuitabilityNarrative(
-            candidate.course,
-            assessment.recommendedSubjects && assessment.recommendedSubjects.length
-              ? assessment.recommendedSubjects
-              : assessment.matchedSubjects,
-            scores
-          ),
-          ...(assessment.recommendedSubjects.length
-            ? [`Recommended subjects: ${assessment.recommendedSubjects.join(', ')}`]
-            : []),
         ],
         studentAverageScore: calculateAverage(scores),
         subjectPriorityScore,
         matchMode: assessment.source,
+        eligibility,
+        explanation: buildExplanation(
+          scoreReasons,
+          candidate.interestAssessment.reasons,
+          candidate.filteredReasons,
+          confidence,
+          subjectGaps,
+          alternatives
+        ),
         aiAssessment: {
           source: assessment.source,
           profileLabel: assessment.profileLabel,
           matchedSubjects: assessment.matchedSubjects,
           recommendedSubjects: assessment.recommendedSubjects,
           model: assessment.model || null,
-          interestSummary: interestProfile?.summary || null,
+          interestSummary: resolvedInterestProfile?.summary || null,
         },
       };
     })
@@ -397,7 +589,10 @@ exports.matchStudentToCourses = async (req, res) => {
     if (!student) return res.status(404).json({ error: 'Student not found' });
 
     const resolvedRequirements = await resolvePreferredUniversityIds(student.requirements || {});
-    const matches = await findMatches(student.scores || {}, resolvedRequirements);
+    const interestProfile = resolvedRequirements.interestStatement
+      ? await buildInterestProfile(resolvedRequirements.interestStatement)
+      : null;
+    const matches = await findMatches(student.scores || {}, resolvedRequirements, interestProfile);
 
     res.json(matches);
   } catch (err) {
@@ -410,13 +605,17 @@ exports.matchManualInput = async (req, res) => {
     const scores = req.body.scores || {};
     const requirements = req.body.requirements || {};
     const resolvedRequirements = await resolvePreferredUniversityIds(requirements);
-    const matches = await findMatches(scores, resolvedRequirements);
+    const interestProfile = resolvedRequirements.interestStatement
+      ? await buildInterestProfile(resolvedRequirements.interestStatement)
+      : null;
+    const matches = await findMatches(scores, resolvedRequirements, interestProfile);
 
     res.json({
       input: {
         scores,
         requirements: resolvedRequirements,
         interestStatement: resolvedRequirements.interestStatement || '',
+        interestProfile,
         averageScore: calculateAverage(scores),
       },
       matches,
@@ -435,7 +634,10 @@ exports.matchStpmPdfUpload = async (req, res) => {
     const requirements = req.body.requirements ? JSON.parse(req.body.requirements) : {};
     const parsed = await parseStpmPdfBuffer(req.file.buffer);
     const resolvedRequirements = await resolvePreferredUniversityIds(requirements);
-    const matches = await findMatches(parsed.scores || {}, resolvedRequirements);
+    const interestProfile = resolvedRequirements.interestStatement
+      ? await buildInterestProfile(resolvedRequirements.interestStatement)
+      : null;
+    const matches = await findMatches(parsed.scores || {}, resolvedRequirements, interestProfile);
 
     res.json({
       input: {
@@ -444,6 +646,7 @@ exports.matchStpmPdfUpload = async (req, res) => {
         subjects: parsed.subjects,
         requirements: resolvedRequirements,
         interestStatement: resolvedRequirements.interestStatement || '',
+        interestProfile,
         averageScore: calculateAverage(parsed.scores),
       },
       matches,

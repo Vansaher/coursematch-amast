@@ -29,6 +29,7 @@
             <a class="admin-nav-item" href="/user/catalog">Course Catalog</a>
           </nav>
           <div class="admin-toolbar-actions topbar-actions">
+            <a class="secondary-button" href="/account">User account</a>
             <a class="secondary-button" href="/admin/login">Admin login</a>
           </div>
         </header>
@@ -89,6 +90,9 @@
 
             <div class="form-actions">
               <button type="submit" class="primary-button">Find matches</button>
+              <button id="rerun-button" type="button" class="secondary-button hidden-action" hidden>
+                Re-run
+              </button>
               <span id="form-status" class="status-text"></span>
             </div>
           </form>
