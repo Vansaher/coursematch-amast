@@ -52,6 +52,12 @@ function getJob(id) {
   return jobs.get(id) || null;
 }
 
+function listJobs(type = null) {
+  return [...jobs.values()]
+    .filter((job) => !type || job.type === type)
+    .sort((left, right) => new Date(right.updatedAt) - new Date(left.updatedAt));
+}
+
 function serializeJob(job) {
   if (!job) {
     return null;
@@ -98,6 +104,7 @@ function startJob(id, task) {
 module.exports = {
   createJob,
   getJob,
+  listJobs,
   serializeJob,
   startJob,
   updateJob,

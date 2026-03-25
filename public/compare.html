@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Compare Courses</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="page-shell user-shell dashboard-style-shell landing-home-shell app-topbar-shell">
+    <div class="backdrop"></div>
+    <div class="admin-dashboard user-dashboard-shell topbar-dashboard-shell">
+      <main class="admin-main topbar-main">
+        <header class="admin-topbar landing-app-topbar">
+          <a class="landing-home-brand" href="/">
+            <span class="landing-home-brand-mark">A</span>
+            <span class="landing-home-brand-copy">
+              <strong>AMAST Match</strong>
+              <span>Malaysian university course matching</span>
+            </span>
+          </a>
+          <nav class="admin-nav topbar-nav">
+            <a class="admin-nav-item" href="/user">Course Matcher</a>
+            <a class="admin-nav-item" href="/user/catalog">Course Catalog</a>
+            <a class="admin-nav-item account-nav-item" href="/account">Account</a>
+          </nav>
+        </header>
+
+        <section class="hero-card user-hero-banner">
+          <p class="eyebrow">Course Compare</p>
+          <h1>Search courses and compare them side by side.</h1>
+          <p class="lede">
+            Pick a university, search by course name, then add courses into a side-by-side
+            comparison layout.
+          </p>
+          <div class="hero-links">
+            <a class="secondary-button" href="/user/catalog">Back to catalog</a>
+          </div>
+        </section>
+
+        <section class="panel compare-workspace-panel">
+          <div class="panel-heading">
+            <h2>Compare Workspace</h2>
+            <p>Select up to three courses for a simple side-by-side comparison.</p>
+          </div>
+
+          <div class="compare-filter-grid">
+            <label class="catalog-select-label">
+              University
+              <select id="compare-university-select">
+                <option value="">All universities</option>
+              </select>
+            </label>
+            <label>
+              Search course
+              <input id="compare-search" type="text" placeholder="Search by course, faculty, or code" />
+            </label>
+          </div>
+
+          <div class="catalog-status-row">
+            <div id="compare-status" class="status-text"></div>
+            <div id="compare-selection-status" class="status-text"></div>
+          </div>
+
+          <section class="catalog-side-by-side compare-layout">
+            <div>
+              <div id="compare-results" class="catalog-groups compare-results-grid"></div>
+            </div>
+
+            <aside class="panel catalog-side-panel compare-side-panel">
+              <div class="panel-heading">
+                <h3>Selected Courses</h3>
+                <p>The selected courses are shown side by side below.</p>
+              </div>
+              <div id="compare-picked-list" class="catalog-mini-list">
+                <div class="summary-placeholder">No courses selected yet.</div>
+              </div>
+            </aside>
+          </section>
+
+          <section class="panel compare-display-panel">
+            <div class="panel-heading">
+              <h3>Side-by-Side Comparison</h3>
+              <p>Simple course cards only for now.</p>
+            </div>
+            <div id="compare-display" class="catalog-compare-grid compare-display-grid">
+              <div class="summary-placeholder">Choose courses to compare them here.</div>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script src="/compare.js"></script>
+  </body>
+</html>

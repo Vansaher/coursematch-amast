@@ -66,57 +66,107 @@
             <p>Total courses in catalogue</p>
           </article>
           <article class="admin-kpi-card kpi-violet">
-            <div class="admin-kpi-icon">F</div>
-            <span class="admin-kpi-label">Filtered</span>
-            <strong id="stat-filtered">0</strong>
-            <p>Courses in the current result set</p>
+            <div class="admin-kpi-icon">I</div>
+            <span class="admin-kpi-label">Incomplete</span>
+            <strong id="stat-incomplete">0</strong>
+            <p>Courses still missing planning or requirement data</p>
           </article>
           <article class="admin-kpi-card kpi-orange">
-            <div class="admin-kpi-icon">M</div>
-            <span class="admin-kpi-label">Matching</span>
-            <strong id="stat-matching">Ready</strong>
-            <p>User matching portal is available</p>
+            <div class="admin-kpi-icon">L</div>
+            <span class="admin-kpi-label">Last Import</span>
+            <strong id="stat-last-import">Idle</strong>
+            <p id="last-import-copy">Run an import to populate current status.</p>
           </article>
+        </section>
+
+        <section class="panel admin-dashboard-panel admin-wide-panel">
+          <div class="admin-panel-header admin-header-blue">
+            <span></span>
+            <h2>Action Row</h2>
+          </div>
+          <p class="admin-panel-copy">Jump straight into the next operational task.</p>
+          <div class="admin-action-row">
+            <a class="primary-button landing-button" href="/admin/imports">Run import</a>
+            <a class="secondary-button" href="#review-issues-panel">Review issues</a>
+            <a class="secondary-button" href="/admin/catalog">Open catalog</a>
+          </div>
         </section>
 
         <section class="admin-content-grid">
           <section class="panel admin-dashboard-panel">
             <div class="admin-panel-header admin-header-violet">
               <span></span>
-              <h2>Universities</h2>
+              <h2>Health Snapshot</h2>
             </div>
             <p class="admin-panel-copy">
-              Select a university to narrow the course catalogue below.
+              Missing data counts that directly affect browsing quality and matching confidence.
             </p>
-            <div id="university-list" class="chip-list admin-chip-list"></div>
+            <div id="health-counts" class="admin-mini-grid"></div>
           </section>
 
           <section class="panel admin-dashboard-panel">
             <div class="admin-panel-header admin-header-blue">
               <span></span>
-              <h2>Import Centre</h2>
+              <h2>Parsing Failures</h2>
             </div>
             <p class="admin-panel-copy">
-              Run scraper imports from a dedicated screen with optional URL, CSV, or PDF input.
+              Import failures tracked in the current server session.
             </p>
-            <div class="admin-dashboard-cta">
-              <a class="primary-button landing-button" href="/admin/imports">Open imports page</a>
+            <div id="parsing-failures" class="admin-mini-grid"></div>
+          </section>
+
+          <section class="panel admin-dashboard-panel" id="review-issues-panel">
+            <div class="admin-panel-header admin-header-orange">
+              <span></span>
+              <h2>Review Queue</h2>
             </div>
+            <p class="admin-panel-copy">
+              Priority items that should be checked from imports or catalog cleanup.
+            </p>
+            <div id="review-queue" class="result-list compact-list"></div>
+          </section>
+
+          <section class="panel admin-dashboard-panel">
+            <div class="admin-panel-header admin-header-violet">
+              <span></span>
+              <h2>Duplicate Warnings</h2>
+            </div>
+            <p class="admin-panel-copy">
+              Possible duplicate course records grouped by university and normalized name.
+            </p>
+            <div id="duplicate-warnings" class="result-list compact-list"></div>
           </section>
 
           <section class="panel admin-dashboard-panel admin-wide-panel">
             <div class="admin-panel-header admin-header-blue">
               <span></span>
-              <h2>Course Catalogue</h2>
+              <h2>Coverage / Freshness</h2>
             </div>
             <p class="admin-panel-copy">
-              Filter by faculty name and inspect the current imported catalogue.
+              Course totals and the most recent scrape activity for each university.
             </p>
-            <form id="course-filter-form" class="filter-bar">
-              <input type="text" name="faculty" placeholder="Faculty filter" />
-              <button type="submit" class="secondary-button">Apply</button>
-            </form>
-            <div id="course-list" class="result-list compact-list admin-course-list"></div>
+            <div id="coverage-rows" class="result-list compact-list"></div>
+          </section>
+
+          <section class="panel admin-dashboard-panel admin-wide-panel">
+            <div class="admin-panel-header admin-header-green">
+              <span></span>
+              <h2>Usage Analytics</h2>
+            </div>
+            <p class="admin-panel-copy">
+              Lightweight student behavior signals from saved shortlists and matcher sessions.
+            </p>
+            <div id="analytics-summary" class="admin-mini-grid"></div>
+            <div class="admin-analytics-grid">
+              <div>
+                <h3 class="admin-subsection-title">Interest themes</h3>
+                <div id="analytics-themes" class="admin-mini-grid"></div>
+              </div>
+              <div>
+                <h3 class="admin-subsection-title">Most shortlisted universities</h3>
+                <div id="analytics-shortlist" class="admin-mini-grid"></div>
+              </div>
+            </div>
           </section>
         </section>
       </main>

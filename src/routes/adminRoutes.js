@@ -9,6 +9,7 @@ const upload = multer({ dest: 'uploads/' });
 router.post('/login', authController.login);
 router.post('/logout', authController.logout);
 router.get('/session', authController.session);
+router.get('/dashboard', requireAdminApi, controller.dashboard);
 router.post('/imports', requireAdminApi, upload.single('sourceFile'), controller.runImport);
 router.post('/imports/preview', requireAdminApi, upload.single('sourceFile'), controller.previewImport);
 router.post('/imports/apply', requireAdminApi, upload.single('sourceFile'), controller.applyImport);

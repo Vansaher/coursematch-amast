@@ -45,6 +45,10 @@ app.get('/user/catalog', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'catalog.html'));
 });
 
+app.get('/user/compare', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'compare.html'));
+});
+
 app.get('/admin/catalog', requireAdminPage, (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'admin-catalog.html'));
 });

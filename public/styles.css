@@ -956,6 +956,14 @@ button:hover {
   background: #9b53ea;
 }
 
+.admin-header-green span {
+  background: #26be59;
+}
+
+.admin-header-orange span {
+  background: #fe7c17;
+}
+
 .admin-panel-header h2 {
   font-size: 1.1rem;
 }
@@ -968,6 +976,71 @@ button:hover {
 .admin-dashboard-cta {
   display: flex;
   align-items: center;
+}
+
+.admin-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.admin-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.admin-mini-stat {
+  min-height: 110px;
+}
+
+.admin-mini-stat strong,
+.admin-mini-stat span {
+  display: block;
+}
+
+.admin-mini-stat strong {
+  color: #244264;
+}
+
+.admin-mini-stat span {
+  margin-top: 12px;
+  color: #5b6880;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.admin-mini-stat-wide {
+  grid-column: 1 / -1;
+}
+
+.admin-note-card h3,
+.admin-coverage-card h3 {
+  margin: 0;
+}
+
+.admin-note-row,
+.admin-coverage-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+}
+
+.admin-coverage-head {
+  margin-bottom: 12px;
+}
+
+.admin-analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.admin-subsection-title {
+  margin: 0 0 14px;
+  font-size: 1rem;
 }
 
 .admin-import-form {
@@ -1273,6 +1346,12 @@ button:hover {
   gap: 22px;
 }
 
+.compare-workspace-panel,
+.compare-display-panel {
+  display: grid;
+  gap: 22px;
+}
+
 .catalog-toolbar {
   display: flex;
   gap: 16px;
@@ -1282,6 +1361,12 @@ button:hover {
 .catalog-filter-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.compare-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.45fr) minmax(0, 1fr);
   gap: 14px;
 }
 
@@ -1317,6 +1402,10 @@ button:hover {
   gap: 18px;
 }
 
+.compare-layout {
+  align-items: start;
+}
+
 .catalog-side-panel {
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid #dfe6ef;
@@ -1324,10 +1413,19 @@ button:hover {
   box-shadow: 0 16px 32px rgba(69, 85, 112, 0.08);
 }
 
+.compare-side-panel {
+  position: sticky;
+  top: 24px;
+}
+
 .catalog-groups {
   display: grid;
   gap: 16px;
   margin-top: 18px;
+}
+
+.compare-results-grid {
+  margin-top: 0;
 }
 
 .catalog-group {
@@ -1376,6 +1474,10 @@ button:hover {
 .catalog-course-card {
   background: #fff;
   border-color: #e1e8f1;
+}
+
+.compare-result-card {
+  min-height: 100%;
 }
 
 .catalog-course-toolbar {
@@ -1450,6 +1552,10 @@ button:hover {
   display: grid;
   gap: 12px;
   margin-top: 16px;
+}
+
+.compare-display-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .catalog-compare-card {
@@ -2304,6 +2410,7 @@ button:hover {
 
   .admin-kpi-grid,
   .admin-content-grid,
+  .admin-analytics-grid,
   .catalog-filter-grid,
   .catalog-side-by-side,
   .catalog-detail-grid,
@@ -2318,6 +2425,10 @@ button:hover {
   }
 
   .admin-import-form {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-mini-grid {
     grid-template-columns: 1fr;
   }
 

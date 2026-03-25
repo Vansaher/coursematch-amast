@@ -1,15 +1,30 @@
-const universityList = document.getElementById('university-list');
-const courseList = document.getElementById('course-list');
-const courseFilterForm = document.getElementById('course-filter-form');
 const logoutButton = document.getElementById('logout-button');
-const statUniversities = document.getElementById('stat-universities');
-const statCourses = document.getElementById('stat-courses');
-const statFiltered = document.getElementById('stat-filtered');
-const statMatching = document.getElementById('stat-matching');
 const adminUserMenu = document.querySelector('.admin-user-menu');
 const adminToolbarUser = document.querySelector('.admin-toolbar-user');
 
-let activeUniversityId = '';
+const statUniversities = document.getElementById('stat-universities');
+const statCourses = document.getElementById('stat-courses');
+const statIncomplete = document.getElementById('stat-incomplete');
+const statLastImport = document.getElementById('stat-last-import');
+
+const lastImportCopy = document.getElementById('last-import-copy');
+const healthCounts = document.getElementById('health-counts');
+const duplicateWarnings = document.getElementById('duplicate-warnings');
+const parsingFailures = document.getElementById('parsing-failures');
+const reviewQueue = document.getElementById('review-queue');
+const coverageRows = document.getElementById('coverage-rows');
+const analyticsSummary = document.getElementById('analytics-summary');
+const analyticsThemes = document.getElementById('analytics-themes');
+const analyticsShortlist = document.getElementById('analytics-shortlist');
+
+function escapeHtml(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 async function fetchJson(url, options = {}) {
   const response = await fetch(url, options);
@@ -18,6 +33,185 @@ async function fetchJson(url, options = {}) {
     throw new Error(payload.error || 'Request failed');
   }
   return payload;
+}
+
+function formatRelativeDays(staleDays) {
+  if (staleDays === null || staleDays === undefined) {
+    return 'No update recorded';
+  }
+  if (staleDays === 0) {
+    return 'Updated today';
+  }
+  if (staleDays === 1) {
+    return 'Updated 1 day ago';
+  }
+  return `Updated ${staleDays} days ago`;
+}
+
+function renderHealthCounts(missingCounts) {
+  const entries = [
+    ['Missing entry requirements', missingCounts.entryRequirements],
+    ['Missing descriptions', missingCounts.descriptions],
+    ['Missing intake', missingCounts.intake],
+    ['Missing tuition', missingCounts.tuition],
+    ['Missing faculty', missingCounts.faculty],
+    ['Missing duration', missingCounts.duration],
+  ];
+
+  healthCounts.innerHTML = entries
+    .map(
+      ([label, count]) => `
+        <article class="summary-placeholder admin-mini-stat">
+          <strong>${escapeHtml(label)}</strong>
+          <span>${escapeHtml(String(count))}</span>
+        </article>
+      `
+    )
+    .join('');
+}
+
+function renderDuplicateWarnings(items) {
+  if (!items.length) {
+    duplicateWarnings.innerHTML = '<div class="summary-placeholder compact-placeholder">No duplicate warnings found.</div>';
+    return;
+  }
+
+  duplicateWarnings.innerHTML = items
+    .map(
+      (item) => `
+        <article class="result-card admin-note-card">
+          <h3>${escapeHtml(item.courseName)}</h3>
+          <p>${escapeHtml(item.universityName)} has ${escapeHtml(String(item.count))} records with the same normalized name.</p>
+        </article>
+      `
+    )
+    .join('');
+}
+
+function renderParsingFailures(parsing) {
+  parsingFailures.innerHTML = `
+    <article class="summary-placeholder admin-mini-stat">
+      <strong>Failed import jobs</strong>
+      <span>${escapeHtml(String(parsing.failedJobs))}</span>
+    </article>
+    <article class="summary-placeholder admin-mini-stat">
+      <strong>Failed course URLs</strong>
+      <span>${escapeHtml(String(parsing.failedUrls))}</span>
+    </article>
+    <article class="summary-placeholder admin-mini-stat admin-mini-stat-wide">
+      <strong>Latest failure message</strong>
+      <span>${escapeHtml(parsing.lastFailureMessage || 'No recent parsing failure recorded in this server session.')}</span>
+    </article>
+  `;
+}
+
+function renderReviewQueue(items) {
+  reviewQueue.innerHTML = items
+    .map(
+      (item) => `
+        <article class="result-card admin-note-card">
+          <div class="admin-note-row">
+            <div>
+              <h3>${escapeHtml(item.title)}</h3>
+              <p>${escapeHtml(String(item.count))} items currently need attention.</p>
+            </div>
+            <a class="secondary-button small-button" href="${escapeHtml(item.actionHref)}">${escapeHtml(item.actionLabel)}</a>
+          </div>
+        </article>
+      `
+    )
+    .join('');
+}
+
+function renderCoverage(items) {
+  if (!items.length) {
+    coverageRows.innerHTML = '<div class="summary-placeholder">No university coverage data yet.</div>';
+    return;
+  }
+
+  coverageRows.innerHTML = items
+    .map(
+      (item) => `
+        <article class="result-card admin-coverage-card">
+          <div class="admin-coverage-head">
+            <h3>${escapeHtml(item.name)}</h3>
+            <span class="result-chip">${escapeHtml(String(item.totalCourses))} courses</span>
+          </div>
+          <div class="result-meta">
+            <span>${escapeHtml(formatRelativeDays(item.staleDays))}</span>
+            <span>${escapeHtml(String(item.missingRequirements))} missing requirements</span>
+            <span>${escapeHtml(String(item.missingDescriptions))} missing descriptions</span>
+          </div>
+        </article>
+      `
+    )
+    .join('');
+}
+
+function renderAnalytics(analytics) {
+  analyticsSummary.innerHTML = `
+    <article class="summary-placeholder admin-mini-stat">
+      <strong>Total users</strong>
+      <span>${escapeHtml(String(analytics.totalUsers))}</span>
+    </article>
+    <article class="summary-placeholder admin-mini-stat">
+      <strong>Match runs</strong>
+      <span>${escapeHtml(String(analytics.totalMatchRuns))}</span>
+    </article>
+    <article class="summary-placeholder admin-mini-stat">
+      <strong>Saved shortlist items</strong>
+      <span>${escapeHtml(String(analytics.totalSavedCourses))}</span>
+    </article>
+    <article class="summary-placeholder admin-mini-stat">
+      <strong>What-if reruns</strong>
+      <span>${escapeHtml(String(analytics.whatIfRuns))}</span>
+    </article>
+  `;
+
+  analyticsThemes.innerHTML = analytics.interestThemes.length
+    ? analytics.interestThemes
+        .map(
+          (item) => `
+            <article class="summary-placeholder admin-mini-stat">
+              <strong>${escapeHtml(item.label)}</strong>
+              <span>${escapeHtml(String(item.count))} sessions</span>
+            </article>
+          `
+        )
+        .join('')
+    : '<div class="summary-placeholder compact-placeholder">No interest trends yet.</div>';
+
+  analyticsShortlist.innerHTML = analytics.topShortlistedUniversities.length
+    ? analytics.topShortlistedUniversities
+        .map(
+          (item) => `
+            <article class="summary-placeholder admin-mini-stat">
+              <strong>${escapeHtml(item.name)}</strong>
+              <span>${escapeHtml(String(item.count))} shortlist saves</span>
+            </article>
+          `
+        )
+        .join('')
+    : '<div class="summary-placeholder compact-placeholder">No shortlist activity yet.</div>';
+}
+
+async function loadDashboard() {
+  const data = await fetchJson('/api/admin/dashboard');
+
+  statUniversities.textContent = String(data.kpis.universities);
+  statCourses.textContent = String(data.kpis.totalCourses);
+  statIncomplete.textContent = String(data.kpis.incompleteCourses);
+  statLastImport.textContent = data.kpis.lastImportLabel;
+  lastImportCopy.textContent = data.kpis.lastImportAt
+    ? `${data.kpis.lastImportMessage} • ${new Date(data.kpis.lastImportAt).toLocaleString()}`
+    : data.kpis.lastImportMessage;
+
+  renderHealthCounts(data.health.missingCounts);
+  renderDuplicateWarnings(data.health.duplicateWarnings);
+  renderParsingFailures(data.health.parsingFailures);
+  renderReviewQueue(data.health.reviewQueue);
+  renderCoverage(data.coverage);
+  renderAnalytics(data.analytics);
 }
 
 adminToolbarUser?.addEventListener('click', (event) => {
@@ -41,84 +235,6 @@ logoutButton.addEventListener('click', async () => {
   }
 });
 
-function renderCourses(courses) {
-  courseList.innerHTML = '';
-  statFiltered.textContent = String(courses.length);
-  if (!courses.length) {
-    courseList.innerHTML = '<div class="summary-placeholder">No courses found for this filter.</div>';
-    return;
-  }
-
-  courses.slice(0, 80).forEach((course) => {
-    const card = document.createElement('article');
-    card.className = 'result-card';
-    card.innerHTML = `
-      <h3>${course.name}</h3>
-      <div class="result-meta">
-        <span>${course.university?.name || 'Unknown university'}</span>
-        <span>${course.faculty || 'Faculty not set'}</span>
-        <span>${course.durationText || 'Duration unknown'}</span>
-      </div>
-      <p>${course.description || 'No description available yet.'}</p>
-    `;
-    courseList.appendChild(card);
-  });
-}
-
-async function loadCourses() {
-  const faculty = new FormData(courseFilterForm).get('faculty') || '';
-  const query = new URLSearchParams();
-  if (activeUniversityId) {
-    query.set('universityId', activeUniversityId);
-  }
-  if (faculty) {
-    query.set('faculty', faculty);
-  }
-  const courses = await fetchJson(`/api/courses?${query.toString()}`);
-  if (!activeUniversityId && !faculty) {
-    statCourses.textContent = String(courses.length);
-  }
-  renderCourses(courses);
-}
-
-async function loadUniversities() {
-  const universities = await fetchJson('/api/universities');
-  statUniversities.textContent = String(universities.length);
-  universityList.innerHTML = '';
-
-  const allChip = document.createElement('button');
-  allChip.type = 'button';
-  allChip.className = `chip ${activeUniversityId ? '' : 'active'}`;
-  allChip.textContent = 'All universities';
-  allChip.addEventListener('click', async () => {
-    activeUniversityId = '';
-    await loadUniversities();
-    await loadCourses();
-  });
-  universityList.appendChild(allChip);
-
-  universities.forEach((university) => {
-    const chip = document.createElement('button');
-    chip.type = 'button';
-    chip.className = `chip ${String(university.id) === String(activeUniversityId) ? 'active' : ''}`;
-    chip.textContent = `${university.name} (${(university.courses || []).length})`;
-    chip.addEventListener('click', async () => {
-      activeUniversityId = university.id;
-      await loadUniversities();
-      await loadCourses();
-    });
-    universityList.appendChild(chip);
-  });
-}
-
-courseFilterForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  await loadCourses();
-});
-
-Promise.all([loadUniversities(), loadCourses()]).catch((error) => {
-  if (statMatching) {
-    statMatching.textContent = 'Error';
-  }
-  console.error(error);
+loadDashboard().catch((error) => {
+  lastImportCopy.textContent = error.message;
 });
